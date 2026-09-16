@@ -2,9 +2,9 @@ name: Build ORAS MMO 3gx
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    paths:
+      - 'android_mod/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
@@ -14,27 +14,41 @@ jobs:
       image: devkitpro/devkitarm:latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Clone CTRPluginFramework-BlankTemplate
-      run: git clone https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate.git template
+      - name: Clone Nanquitas CTRPluginFramework-BlankTemplate
+        run: |
+          # Use Nanquitas template because it comes with pre-compiled libCTRPluginFramework.a and headers
+          git clone --depth=1 https://github.com/Nanquitas/CTRPluginFramework-BlankTemplate template
+          
+      - name: Prepare Source Files
+        run: |
+          # The template expects files in Sources/ and Includes/ (case sensitive)
+          cp android_mod/main.cpp template/Sources/
+          cp android_mod/Entity.hpp template/Includes/
+          cp android_mod/NetworkClient.hpp template/Includes/
+          
+      - name: Build .3gx plugin
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+        run: |
+          export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
+          cd template
+          # The template Makefile automatically names the output based on the folder name, but we can override it
+          make
+          
+          # Find the generated .3gx file (it should be in the root of the template or in an out/ folder)
+          find . -name "*.3gx"
+          # Copy it to our desired output path
+          mkdir -p ../android_mod/build
+          cp *.3gx ../android_mod/build/OrasMmo.3gx || cp out/*.3gx ../android_mod/build/OrasMmo.3gx
 
-    - name: Copy Source Files
-      run: |
-        cp android_mod/main.cpp template/Sources/
-        cp android_mod/Entity.hpp template/Includes/
-        cp android_mod/NetworkClient.hpp template/Includes/
-
-    - name: Build .3gx plugin
-      run: |
-        cd template
-        make
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: OrasMmo-3gx
-        path: |
-          template/*.3gx
-          template/out/*.3gx
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrasMmo-3gx
+          path: android_mod/build/OrasMmo.3gx
+          if-no-files-found: warn
+          retention-days: 90
