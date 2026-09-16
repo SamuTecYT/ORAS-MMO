@@ -17,21 +17,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Clone Nanquitas CTRPluginFramework-BlankTemplate
+      - name: Install official libctrpf and 3gxtool
         run: |
-          git clone --depth=1 https://github.com/Nanquitas/CTRPluginFramework-BlankTemplate template
+          echo -e "\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional" >> /etc/pacman.conf
+          echo -e "\n[thepixellizeross-win]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/win\nSigLevel = Optional" >> /etc/pacman.conf
+          # Using dkp-pacman inside the devkitpro container
+          dkp-pacman -Sy --noconfirm libctrpf 3gxtool
+
+      - name: Clone PabloMK7 CTRPluginFramework-BlankTemplate
+        run: |
+          git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate template
           
       - name: Prepare Source Files
         run: |
           cp android_mod/main.cpp template/Sources/
           cp android_mod/Entity.hpp template/Includes/
           cp android_mod/NetworkClient.hpp template/Includes/
-          
-      - name: Patch Makefile for libctru includes
-        run: |
-          cd template
-          # Add libctru includes to the INCLUDE path so sys/socket.h can be found
-          sed -i 's|-I $(CURDIR)/$(BUILD)|-I $(CURDIR)/$(BUILD) -I $(DEVKITPRO)/libctru/include|' Makefile
           
       - name: Build .3gx plugin
         env:
@@ -43,7 +44,7 @@ jobs:
           make
           
           mkdir -p ../android_mod/build
-          cp *.3gx ../android_mod/build/OrasMmo.3gx || cp out/*.3gx ../android_mod/build/OrasMmo.3gx
+          find . -name "*.3gx" -exec cp {} ../android_mod/build/OrasMmo.3gx \;
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
