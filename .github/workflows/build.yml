@@ -19,15 +19,19 @@ jobs:
 
       - name: Clone Nanquitas CTRPluginFramework-BlankTemplate
         run: |
-          # Use Nanquitas template because it comes with pre-compiled libCTRPluginFramework.a and headers
           git clone --depth=1 https://github.com/Nanquitas/CTRPluginFramework-BlankTemplate template
           
       - name: Prepare Source Files
         run: |
-          # The template expects files in Sources/ and Includes/ (case sensitive)
           cp android_mod/main.cpp template/Sources/
           cp android_mod/Entity.hpp template/Includes/
           cp android_mod/NetworkClient.hpp template/Includes/
+          
+      - name: Patch Makefile for libctru includes
+        run: |
+          cd template
+          # Add libctru includes to the INCLUDE path so sys/socket.h can be found
+          sed -i 's|-I $(CURDIR)/$(BUILD)|-I $(CURDIR)/$(BUILD) -I $(DEVKITPRO)/libctru/include|' Makefile
           
       - name: Build .3gx plugin
         env:
@@ -36,12 +40,8 @@ jobs:
         run: |
           export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
           cd template
-          # The template Makefile automatically names the output based on the folder name, but we can override it
           make
           
-          # Find the generated .3gx file (it should be in the root of the template or in an out/ folder)
-          find . -name "*.3gx"
-          # Copy it to our desired output path
           mkdir -p ../android_mod/build
           cp *.3gx ../android_mod/build/OrasMmo.3gx || cp out/*.3gx ../android_mod/build/OrasMmo.3gx
 
