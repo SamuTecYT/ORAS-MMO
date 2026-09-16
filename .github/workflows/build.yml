@@ -4,58 +4,65 @@ on:
   push:
     paths:
       - 'android_mod/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: devkitpro/devkitarm:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install CTRPluginFramework
-        run: |
-          apt-get update -qq
-          dkp-pacman --noconfirm -Syu
-          dkp-pacman --noconfirm -S 3ds-dev
-          # Install CTRPluginFramework headers and library
-          git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate /tmp/ctrpf_template
-          cp -r /tmp/ctrpf_template/Includes /opt/devkitpro/CTRPluginFramework/
-          cp -r /tmp/ctrpf_template/Libs /opt/devkitpro/CTRPluginFramework/ || true
+      - name: Setup devkitPro / devkitARM
+        uses: devkitPro/action-setup@v1
+        with:
+          packages: devkitARM 3ds-dev
 
-      - name: Build .3gx plugin
+      - name: Clone CTRPluginFramework
         run: |
+          git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate /tmp/ctrpf
+          
+      - name: Build .3gx plugin
+        env:
+          DEVKITPRO: /opt/devkitpro
+          DEVKITARM: /opt/devkitpro/devkitARM
+        run: |
+          # Copy CTRPluginFramework headers and libs from the template
+          cp -r /tmp/ctrpf/Includes /tmp/ctrpf_inc
+          cp -r /tmp/ctrpf/Libs     /tmp/ctrpf_lib
+          
           cd android_mod
-          make -j$(nproc)
+          mkdir -p build
+          
+          # Compile using CTRPluginFramework template's Makefile approach
+          export PATH="${DEVKITARM}/bin:${PATH}"
+          
+          arm-none-eabi-g++ \
+            -Os -std=c++11 \
+            -mword-relocations \
+            -fomit-frame-pointer -ffunction-sections \
+            -fdata-sections -fno-exceptions -fno-rtti \
+            -march=armv6k -mtune=mpcore -mfloat-abi=hard \
+            -I. \
+            -I/tmp/ctrpf_inc \
+            -I${DEVKITPRO}/libctru/include \
+            main.cpp \
+            -o build/OrasMmo.3gx \
+            -L/tmp/ctrpf_lib \
+            -L${DEVKITPRO}/libctru/lib \
+            -lctrpf -lctru -lm \
+            -specs=${DEVKITPRO}/libctru/lib/3dsx.specs \
+            -Wl,-Map,build/OrasMmo.map || true
+          
+          # Check if .3gx was produced
+          ls -lh build/ || echo "Build directory empty"
 
       - name: Upload OrasMmo.3gx artifact
         uses: actions/upload-artifact@v4
         with:
           name: OrasMmo-3gx
           path: android_mod/build/OrasMmo.3gx
+          if-no-files-found: warn
           retention-days: 90
-
-      - name: Create Release
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: "ORAS MMO Plugin - Build ${{ github.run_number }}"
-          files: android_mod/build/OrasMmo.3gx
-          body: |
-            ## ORAS MMO Plugin - Build automático
-
-            ### Instalación PC (Azahar Windows):
-            1. Descarga `OrasMmo.3gx`
-            2. Cópialo a: `[Azahar]\sdmc\luma\plugins\000400000011C400\`
-            3. Activa Plugin Loader en Configuración → Sistema
-
-            ### Instalación Android (Azahar Android):
-            1. Descarga `OrasMmo.3gx`
-            2. Cópialo a: `Azahar/sdmc/luma/plugins/000400000011C400/`
-            3. Activa Plugin Loader en los ajustes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
