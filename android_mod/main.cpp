@@ -1,3 +1,4 @@
+#include <3ds.h>
 #include <CTRPluginFramework.hpp>
 #include "NetworkClient.hpp"
 #include "Entity.hpp"
@@ -172,7 +173,7 @@ void NetworkThread(void* arg) {
 }
 
 // Executed every frame
-void OnFrameCallback(void) {
+void OnFrameCallback(Time time) {
     u64 current_time = svcGetSystemTick();
 
     // 1. Auto-reminder
@@ -364,8 +365,8 @@ int main(void) {
     OSD::Run(OnOverlayDraw);
     
     // Create standard CTRPluginFramework Thread
-    Thread networkThread(NetworkThread, nullptr, 1024 * 4, 0x18, -1, false);
-    networkThread.Start();
+    Thread networkThread = threadCreate(NetworkThread, nullptr, 1024 * 4, 0x18, -1, false);
+    // networkThread.Start(); (started by threadCreate)
 
     // Attach loop
     menu->OnNewFrame = OnFrameCallback;
@@ -374,7 +375,7 @@ int main(void) {
 
     // Cleanup
     g_isRunning = false;
-    networkThread.Wait();
+    if (networkThread) { threadJoin(networkThread, U64_MAX); threadFree(networkThread); }
     
     // SAFE SHUTDOWN: clear all injected entities before exiting
     {
