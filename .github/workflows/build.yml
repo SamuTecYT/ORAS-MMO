@@ -10,59 +10,59 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:20240202
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup devkitPro / devkitARM
-        uses: devkitPro/action-setup@v1
-        with:
-          packages: devkitARM 3ds-dev
+      - name: Install build dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq wget unzip git
 
       - name: Clone CTRPluginFramework
         run: |
           git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate /tmp/ctrpf
-          
+
       - name: Build .3gx plugin
-        env:
-          DEVKITPRO: /opt/devkitpro
-          DEVKITARM: /opt/devkitpro/devkitARM
         run: |
-          # Copy CTRPluginFramework headers and libs from the template
-          cp -r /tmp/ctrpf/Includes /tmp/ctrpf_inc
-          cp -r /tmp/ctrpf/Libs     /tmp/ctrpf_lib
+          export DEVKITPRO=/opt/devkitpro
+          export DEVKITARM=/opt/devkitpro/devkitARM
+          export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
           
+          CTRPF_INC=/tmp/ctrpf/Includes
+          CTRPF_LIB=/tmp/ctrpf/Libs
+          LIBCTRU_INC=${DEVKITPRO}/libctru/include
+          LIBCTRU_LIB=${DEVKITPRO}/libctru/lib
+
           cd android_mod
           mkdir -p build
-          
-          # Compile using CTRPluginFramework template's Makefile approach
-          export PATH="${DEVKITARM}/bin:${PATH}"
-          
-          arm-none-eabi-g++ \
-            -Os -std=c++11 \
-            -mword-relocations \
-            -fomit-frame-pointer -ffunction-sections \
-            -fdata-sections -fno-exceptions -fno-rtti \
-            -march=armv6k -mtune=mpcore -mfloat-abi=hard \
-            -I. \
-            -I/tmp/ctrpf_inc \
-            -I${DEVKITPRO}/libctru/include \
-            main.cpp \
-            -o build/OrasMmo.3gx \
-            -L/tmp/ctrpf_lib \
-            -L${DEVKITPRO}/libctru/lib \
-            -lctrpf -lctru -lm \
-            -specs=${DEVKITPRO}/libctru/lib/3dsx.specs \
-            -Wl,-Map,build/OrasMmo.map || true
-          
-          # Check if .3gx was produced
-          ls -lh build/ || echo "Build directory empty"
 
-      - name: Upload OrasMmo.3gx artifact
+          arm-none-eabi-g++ \
+            -Os -std=c++14 \
+            -marm -march=armv6k -mtune=mpcore -mfloat-abi=hard \
+            -mword-relocations \
+            -fomit-frame-pointer \
+            -ffunction-sections -fdata-sections \
+            -fno-exceptions -fno-rtti \
+            -I. \
+            -I${CTRPF_INC} \
+            -I${LIBCTRU_INC} \
+            main.cpp \
+            -L${CTRPF_LIB} \
+            -L${LIBCTRU_LIB} \
+            -lctrpf -lctru -lm \
+            -Wl,--gc-sections \
+            -o build/OrasMmo.elf \
+            && arm-none-eabi-objcopy -O binary build/OrasMmo.elf build/OrasMmo.3gx \
+            && echo "Build SUCCESS" \
+            && ls -lh build/
+
+      - name: Upload OrasMmo.3gx
         uses: actions/upload-artifact@v4
         with:
           name: OrasMmo-3gx
           path: android_mod/build/OrasMmo.3gx
-          if-no-files-found: warn
           retention-days: 90
