@@ -1,0 +1,27 @@
+=================================================
+      PROJECT ORAS MMO - GUÍA MULTIJUGADOR
+=================================================
+
+Para jugar con tus amigos, uno de ustedes debe ser el "Host" (Servidor) y los demás serán "Clientes".
+
+--- PASO 1: PREPARAR EL SERVIDOR (Tú, el Host) ---
+1. Abre la carpeta 'server' y ejecuta 'run_server.bat'.
+2. La pantalla negra te mostrará tu "LAN IP address" (por ejemplo, 192.168.1.55).
+   - NOTA: Si tus amigos están en otras casas, tendrás que usar Radmin VPN, Hamachi, o abrir el puerto 8765 en tu router. Dales esa IP a tus amigos.
+3. Deja esta ventana negra siempre abierta.
+
+--- PASO 2: PREPARAR A LOS JUGADORES (Clientes) ---
+1. Pásales la carpeta 'client' a tus amigos (por Discord, WhatsApp, etc).
+2. Tus amigos también necesitan Python. Diles que abran PowerShell como Administrador y peguen este comando (solo se hace una vez en la vida):
+   winget install Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements; [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Program Files\Python311\Scripts\;C:\Program Files\Python311\", "User")
+
+--- PASO 3: ¡A JUGAR! ---
+1. Todos deben abrir Azahar y cargar el juego Pokémon ORAS.
+2. (MUY IMPORTANTE) Todos deben tener el GDB Stub activado en los Ajustes Avanzados de Azahar (Puerto 24689).
+3. Cada jugador entra a su carpeta 'client' y ejecuta 'Jugar_MMO_PC.bat'.
+4. La pantalla negra preguntará por la "IP del Servidor". 
+   - Tú (el Host) solo debes presionar Enter (dejarlo en blanco).
+   - Tus amigos deben escribir la IP que les pasaste (ej. 192.168.1.55 o tu IP de Radmin) y presionar Enter.
+5. Luego, todos deben ingresar el MISMO código de sala (ej. 1234).
+
+¡Listo! Todos estarán conectados. En la ventana del Servidor (Host) verás cómo cada jugador se va uniendo y el sistema los mantendrá sincronizados.

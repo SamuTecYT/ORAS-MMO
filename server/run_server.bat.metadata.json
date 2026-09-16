@@ -1,0 +1,4 @@
+{
+  "summary": "Windows batch file launcher that checks Python installation, installs websockets, shows LAN IP, and starts the relay server.",
+  "updatedAt": "2026-09-15T01:39:20.199753Z"
+}
