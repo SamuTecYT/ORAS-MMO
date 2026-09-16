@@ -1,4 +1,6 @@
 #include <3ds.h>
+#include <3ds/services/soc.h>
+#include <malloc.h>
 #include <CTRPluginFramework.hpp>
 #include "NetworkClient.hpp"
 #include "Entity.hpp"
@@ -113,7 +115,7 @@ void NetworkThread(void* arg) {
                     }
                 }
             } else {
-                Sleep(Time::Seconds(5)); 
+                Sleep(Seconds(5)); 
                 continue;
             }
         }
@@ -168,7 +170,7 @@ void NetworkThread(void* arg) {
             for (auto& p : g_remotePlayers) p.active = false;
         }
 
-        Sleep(Time::Milliseconds(33)); // Approx 30Hz network tick
+        Sleep(Milliseconds(33)); // Approx 30Hz network tick
     }
 }
 
