@@ -1,68 +1,40 @@
-name: Build ORAS MMO Plugin
+name: Build ORAS MMO 3gx
 
 on:
   push:
-    paths:
-      - 'android_mod/**'
-      - '.github/workflows/**'
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: devkitpro/devkitarm:20240202
+      image: devkitpro/devkitarm:latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq wget unzip git
+    - name: Clone CTRPluginFramework-BlankTemplate
+      run: git clone https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate.git template
 
-      - name: Clone CTRPluginFramework
-        run: |
-          git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate /tmp/ctrpf
+    - name: Copy Source Files
+      run: |
+        cp android_mod/main.cpp template/Sources/
+        cp android_mod/Entity.hpp template/Includes/
+        cp android_mod/NetworkClient.hpp template/Includes/
 
-      - name: Build .3gx plugin
-        run: |
-          export DEVKITPRO=/opt/devkitpro
-          export DEVKITARM=/opt/devkitpro/devkitARM
-          export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
-          
-          CTRPF_INC=/tmp/ctrpf/Includes
-          CTRPF_LIB=/tmp/ctrpf/Libs
-          LIBCTRU_INC=${DEVKITPRO}/libctru/include
-          LIBCTRU_LIB=${DEVKITPRO}/libctru/lib
+    - name: Build .3gx plugin
+      run: |
+        cd template
+        make
 
-          cd android_mod
-          mkdir -p build
-
-          arm-none-eabi-g++ \
-            -Os -std=c++14 \
-            -marm -march=armv6k -mtune=mpcore -mfloat-abi=hard \
-            -mword-relocations \
-            -fomit-frame-pointer \
-            -ffunction-sections -fdata-sections \
-            -fno-exceptions -fno-rtti \
-            -I. \
-            -I${CTRPF_INC} \
-            -I${LIBCTRU_INC} \
-            main.cpp \
-            -L${CTRPF_LIB} \
-            -L${LIBCTRU_LIB} \
-            -lctrpf -lctru -lm \
-            -Wl,--gc-sections \
-            -o build/OrasMmo.elf \
-            && arm-none-eabi-objcopy -O binary build/OrasMmo.elf build/OrasMmo.3gx \
-            && echo "Build SUCCESS" \
-            && ls -lh build/
-
-      - name: Upload OrasMmo.3gx
-        uses: actions/upload-artifact@v4
-        with:
-          name: OrasMmo-3gx
-          path: android_mod/build/OrasMmo.3gx
-          retention-days: 90
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrasMmo-3gx
+        path: |
+          template/*.3gx
+          template/out/*.3gx
