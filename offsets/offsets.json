@@ -1,0 +1,17 @@
+{
+  "game": "Pokemon ORAS",
+  "region": "ALL",
+  "version": "1.4",
+  "title_ids": ["000400000011C400", "000400000011C500"],
+  "offsets": {
+    "player_x": "0x08C6E894",
+    "player_y": "0x08C6E89C",
+    "player_z": "0x08C6E898",
+    "map_id": "0x08C6E884",
+    "facing_direction": "0x08C6E886",
+    "battle_pointer": "0x081FB478",
+    "battle_state_expected": "0x40001",
+    "money": "0x08C71DC0"
+  },
+  "notes": "Coordinates are 32-bit floats. Map ID is 16-bit. Direction is 8-bit. Battle pointer is 32-bit pointing to a state struct. These are absolute 3DS FCRAM addresses for ORAS v1.4, extracted from Gen6CTRPFrameworkOverhauled."
+}

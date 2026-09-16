@@ -1,0 +1,3 @@
+# Project ORAS MMO — Server Dependencies
+# Only ONE external package required beyond Python stdlib.
+websockets>=11.0

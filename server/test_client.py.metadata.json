@@ -1,0 +1,4 @@
+{
+  "summary": "Integration test client simulating 2 players. Tests position sync, battle lock/unlock, cutscene lock/unlock, ping/pong, and bilingual locale (EN/ES) across concurrent WebSocket connections.",
+  "updatedAt": "2026-09-15T01:39:20.274037400Z"
+}

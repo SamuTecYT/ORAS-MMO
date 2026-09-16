@@ -1,0 +1,4 @@
+{
+  "summary": "Main production WebSocket relay server. Handles 6-player rooms, 64-byte binary packets, battle/cutscene locking, disconnects, and heartbeat.",
+  "updatedAt": "2026-09-15T01:38:09.245171300Z"
+}
