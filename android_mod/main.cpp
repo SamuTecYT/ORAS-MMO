@@ -149,7 +149,7 @@ void NetworkThread(void* arg) {
             if (in_pkt.type == 0x01 && in_pkt.player_id > 0 && in_pkt.player_id <= 5) {
                 g_remotePlayers[in_pkt.player_id].active = true;
                 g_remotePlayers[in_pkt.player_id].last_pkt = in_pkt;
-                g_remotePlayers[in_pkt.player_id].last_update_time = System::Impl::GetSystemTick();
+                g_remotePlayers[in_pkt.player_id].last_update_time = svcGetSystemTick();
             } else if (in_pkt.type == 0x02 && in_pkt.player_id > 0 && in_pkt.player_id <= 5) {
                 g_remotePlayers[in_pkt.player_id].in_battle = true;
             } else if (in_pkt.type == 0x03 && in_pkt.player_id > 0 && in_pkt.player_id <= 5) {
@@ -173,7 +173,7 @@ void NetworkThread(void* arg) {
 
 // Executed every frame
 void OnFrameCallback(void) {
-    u64 current_time = System::Impl::GetSystemTick();
+    u64 current_time = svcGetSystemTick();
 
     // 1. Auto-reminder
     if (g_lastReminderTime == 0) g_lastReminderTime = current_time;
