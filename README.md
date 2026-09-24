@@ -128,7 +128,7 @@ By continuously sampling the game's internal transition registers (such as door 
 
 Opening the **AreaNav** on the bottom touchscreen activates the global Hoenn continental radar:
 
-* **Independent Absolute Positioning:** In v11.0, remote player pins are mathematically decoupled from your local coordinates. When a friend stands still, their pin remains 100% stationary regardless of where you walk.
+* **Independent Absolute Positioning:** In v12.6, remote player pins are mathematically decoupled from your local coordinates. When a friend stands still, their pin remains 100% stationary regardless of where you walk.
 * **Comprehensive Landmark Database:** Covers all routes (Routes 101 to 128), towns, cities, Battle Resort, Ever Grande City, and major caves.
 * **Local Metric Distance:** Displays proximity in meters when players share the same route or town.
 * **Interior Safety Isolation:** Automatically displays a clean `"Centro Pokemon"` badge when a player enters an interior, preventing radar clutter.
