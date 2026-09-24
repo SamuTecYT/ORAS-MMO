@@ -1,0 +1,25 @@
+name: "✨ Sugerencia / Feature Request"
+description: "Propón una nueva idea, mejora o característica para Project ORAS MMO"
+title: "[IDEA]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Nos encanta escuchar las ideas de la comunidad! Comparte tu propuesta a continuación.
+  - type: textarea
+    id: idea_description
+    attributes:
+      label: Descripción de la Sugerencia / Feature Description
+      description: Explica tu idea en detalle. ¿Qué función te gustaría ver en el MMO?
+      placeholder: "Me gustaría que se pudiera..."
+    validations:
+      required: true
+  - type: textarea
+    id: benefits
+    attributes:
+      label: ¿Cómo beneficia a la experiencia de juego? / Benefits
+      description: ¿Por qué crees que esta función mejoraría el proyecto?
+      placeholder: "Ayudaría a que los jugadores puedan..."
+    validations:
+      required: false
