@@ -44,7 +44,7 @@ When *Pokémon Omega Ruby* and *Pokémon Alpha Sapphire* (Gen 6) released on the
 3. **Achieve seamless crossplay between PC emulators (Azahar / Citra) and mobile devices (Android).**
 4. **Deliver a plug-and-play experience that requires no complex server infrastructure or router port-forwarding.**
 
-Version 11.0 represents the **Definitive Edition**, bringing years of reverse engineering, network optimization, and 3D rendering breakthroughs into a unified, polished package.
+Version 12.6 represents the **Definitive Edition**, bringing years of reverse engineering, network optimization, and 3D rendering breakthroughs into a unified, polished package.
 
 ---
 
