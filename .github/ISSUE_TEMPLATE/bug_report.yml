@@ -1,0 +1,78 @@
+name: "🐛 Reporte de Error / Bug Report"
+description: "Reporta un problema técnico o fallo en el plugin o servidor"
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por tomarte el tiempo de reportar este problema! Por favor completa la siguiente información para ayudarnos a reproducir y solucionar el error.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Plataforma / Platform
+      description: ¿En qué dispositivo estás jugando?
+      options:
+        - "PC (Windows)"
+        - "Android (Mobile)"
+    validations:
+      required: true
+  - type: dropdown
+    id: emulator
+    attributes:
+      label: Emulador / Emulator
+      description: ¿Qué emulador de 3DS estás utilizando?
+      options:
+        - "Azahar"
+        - "Citra (Nightly / Canary)"
+        - "Lime3DS"
+        - "Citra Enhanced / Citra MMJ"
+        - "Consola Nintendo 3DS real (Luma3DS)"
+        - "Otro"
+    validations:
+      required: true
+  - type: dropdown
+    id: game
+    attributes:
+      label: Versión del Juego / Game Version
+      description: Selecciona el juego que estás ejecutando
+      options:
+        - "Pokémon Rubí Omega (Omega Ruby)"
+        - "Pokémon Zafiro Alfa (Alpha Sapphire)"
+    validations:
+      required: true
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Versión del Plugin MMO / Plugin Version
+      description: Versión del plugin (ej. v12.6)
+      placeholder: "v12.6"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del Problema / Problem Description
+      description: Explica claramente qué ocurrió de forma concisa.
+      placeholder: "Al caminar hacia..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para Reproducir / Steps to Reproduce
+      description: ¿Qué pasos seguiste antes de que ocurriera el problema?
+      placeholder: |
+        1. Abrir emulador y conectar a sala 1234
+        2. Caminar hacia...
+        3. Ocurre el error...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento Esperado / Expected Behavior
+      description: ¿Qué debería haber ocurrido normalmente?
+      placeholder: "El personaje debería..."
+    validations:
+      required: false
