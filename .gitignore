@@ -1,0 +1,22 @@
+# Build outputs and intermediate files
+Build/
+*.o
+*.elf
+*.d
+*.pyc
+__pycache__/
+
+# Local config and runtime text files
+mmo_ip.txt
+mmo_name.txt
+mmo_room.txt
+
+# OS-specific files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary & backup files
+*.bak
+*.tmp
+temp_sin_bat/

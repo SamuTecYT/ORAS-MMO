@@ -1,0 +1,24 @@
+Author: SamuTecYT & Contributors
+
+Version: # Plugin version
+    Major: 11
+    Minor: 0
+    Revision: 0
+
+Targets: # Low TitleId of games which are compatibles with this plugin (0 for all)
+    - 0x0011C400 # Pokemon Omega Ruby
+    - 0x0011C500 # Pokemon Alpha Sapphire
+
+Title: Pokemon ORAS MMO Plugin v11.0 (Definitive Edition)
+
+Summary: Real-time multiplayer synchronization mod for Pokemon Omega Ruby & Alpha Sapphire
+
+Description: |
+  Pokemon ORAS MMO v11.0.
+  Real-time player sync, 3D isometric avatar projection, AreaNav Hoenn radar, and crossplay between PC and Android.
+
+Compatibility: Any
+
+MemorySize: 5MiB
+
+UsePrivateMemory: false

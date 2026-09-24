@@ -1,65 +1,53 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project ORAS MMO - Relay Server
+title Project ORAS MMO — Servidor v3
 color 0A
 
 echo ============================================================
-echo   Project ORAS MMO ^| WebSocket Relay Server Launcher
+echo    Project ORAS MMO  ^|  Servidor de Relé v3
 echo ============================================================
 echo.
 
-REM --- Check Python is installed ---
+:: ── Verificar Python ──────────────────────────────────────────
 python --version >nul 2>&1
 IF ERRORLEVEL 1 (
     color 0C
-    echo [ERROR] Python is not installed or not in PATH.
-    echo         Download Python 3.8+ from https://www.python.org/downloads/
-    echo         Make sure to check "Add Python to PATH" during install.
-    pause
-    exit /b 1
+    echo [ERROR] Python no encontrado.
+    echo Descargalo de: https://www.python.org/downloads/
+    echo Marca "Add Python to PATH" al instalar.
+    echo.
+    pause & exit /b 1
 )
-
 FOR /F "tokens=*" %%v IN ('python --version 2^>^&1') DO SET PYVER=%%v
-echo [OK] Found %PYVER%
+echo [OK] %PYVER%
 echo.
 
-REM --- Install/update dependencies ---
-echo [INFO] Installing dependencies from requirements.txt...
-python -m pip install -r requirements.txt --quiet
-IF ERRORLEVEL 1 (
-    color 0C
-    echo [ERROR] pip install failed. Check your internet connection.
-    pause
-    exit /b 1
+:: ── Mostrar IPs disponibles ──────────────────────────────────
+echo [INFO] IP Local (para amigos en la MISMA red Wi-Fi):
+echo.
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4" ^| findstr /v "127.0.0.1"') do (
+    set "IP=%%a"
+    set "IP=!IP: =!"
+    echo         !IP!
 )
-echo [OK] Dependencies ready.
+echo.
+echo [INFO] Para jugar por INTERNET con amigos a distancia (ZeroTier):
+echo        - Instala y abre ZeroTier One (incluido en el paquete).
+echo        - Conectate a tu red de ZeroTier.
+echo        - Tu "Managed IP" de ZeroTier (ej. 10.147.x.x o 192.168.19x.x) es la que
+echo          debes dar a tus amigos para que la ingresen en el juego (SELECT -^> Cambiar IP).
 echo.
 
-REM --- Display LAN IP address so players know where to connect ---
-echo [INFO] Your LAN IP addresses (share one with your players):
-echo -------------------------------------------------------
-ipconfig | findstr /i "IPv4" | findstr /v "127.0.0.1"
-echo -------------------------------------------------------
+:: ── Iniciar servidor ─────────────────────────────────────────
+echo [INFO] Puerto: 9000
+echo [INFO] Esperando jugadores... (Ctrl+C para apagar)
 echo.
-echo [INFO] Tell players to connect to:  ws://YOUR_LAN_IP:8765
-echo [INFO] Internet players: use public IP + port-forward 8765/TCP
-echo        or deploy free on Railway/Render (see deploy_guide.md)
-echo.
-
-REM --- Optional: Allow PORT override via environment variable ---
-IF "%PORT%"=="" SET PORT=8765
-echo [INFO] Starting server on port %PORT%...
-echo        Press Ctrl+C to stop the server.
-echo.
-
-REM --- Launch the server ---
 python server.py
 
-REM --- Handle abnormal exit ---
 IF ERRORLEVEL 1 (
     color 0C
     echo.
-    echo [ERROR] Server exited with an error. Check output above.
+    echo [ERROR] El servidor se cerró inesperadamente.
 )
 pause
 endlocal
