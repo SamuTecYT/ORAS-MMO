@@ -1,9 +1,11 @@
-# ORAS MMO network protocol (v16, used by plugin 17.0)
+# 📡 ORAS MMO network protocol (v16, used by plugin 17.0)
+
+← [Back to the README](../README.md) · [Contributing](../CONTRIBUTING.md) · [Architecture](ARCHITECTURE.md) · [Protocol](PROTOCOL.md)
 
 Plain TCP, little-endian, no encryption (the server only relays game-overlay data; see the security notes in the
 README). Reference implementations: `server/server.py` and `3ds_plugin/Includes/Protocol.hpp`.
 
-## 1. Handshake
+## 🤝 1. Handshake
 
 1. The client connects to `IP:port` (default port `9000`) and sends the **room code** as ASCII, 1–16 printable
    characters (`0x20`–`0x7E`), no terminator.
@@ -19,7 +21,7 @@ The server overwrites `player_id` of every packet with the sender's real slot, r
 the room (except whispers, see CHAT) and frees a slot after 60 s without a full packet. Send a `PING` at least every
 few seconds while idle.
 
-## 2. Packet layout (64 bytes)
+## 📦 2. Packet layout (64 bytes)
 
 | Offset | Size | Field | Meaning |
 |---:|---:|---|---|
@@ -43,7 +45,7 @@ few seconds while idle.
 
 Move states (`anim` in POSITION): 0 idle, 1 walk, 2 run, 3 bike, 4 surf.
 
-## 3. Packet types
+## 🏷️ 3. Packet types
 
 | Type | Name | `msg` contents |
 |---|---|---|

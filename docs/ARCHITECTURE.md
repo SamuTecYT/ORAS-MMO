@@ -1,10 +1,12 @@
-# ORAS MMO — architecture and developer guide
+# 🧩 ORAS MMO — architecture and developer guide
+
+← [Back to the README](../README.md) · [Contributing](../CONTRIBUTING.md) · [Architecture](ARCHITECTURE.md) · [Protocol](PROTOCOL.md)
 
 A map of the plugin for anyone who wants to improve it. Code comments are mostly in Spanish; identifiers and this
 guide are in English. Comments that cite `KB §x.y` refer to the project's reverse-engineering notes (not published):
 the addresses and structures they describe are written in the code itself.
 
-## 1. Big picture
+## 🗺️ 1. Big picture
 
 ```
 Azahar ─ Pokémon OR/AS ─┬─ game thread ── GameHook (hook on the game's per-frame update): friends as REAL game models
@@ -20,7 +22,7 @@ Azahar ─ Pokémon OR/AS ─┬─ game thread ── GameHook (hook on the gam
 Entry point: `Sources/main.cpp` — `PatchProcess()` runs before the game's `main` (installs GameLang), `main()` loads
 the config, installs the hooks, starts the threads and registers the OSD callback.
 
-## 2. Files (`3ds_plugin/Sources` + `Includes`)
+## 📁 2. Files (`3ds_plugin/Sources` + `Includes`)
 
 | File | Role |
 |---|---|
@@ -42,7 +44,7 @@ the config, installs the hooks, starts the threads and registers the OSD callbac
 | `Perf.hpp`, `RankScore.hpp`, `Emotes`, `Species`, `Log` | FPS saver, ranking formula, emotes, species names, `mmo_log.txt` |
 | `SafePatch.hpp` | Helper for code patches with JIT invalidation (currently unused) |
 
-## 3. Rules that keep it stable
+## 🛡️ 3. Rules that keep it stable
 
 - **C++ gnu++11, no exceptions, no RTTI** (`-Os -fno-rtti -fno-exceptions`). Plugin heap ≈ 8 MB (`MemorySize: 10MiB`).
 - **No large allocations per frame.** Reserve at boot (Render3D caches, follower arena, fonts, texts): heap
@@ -56,7 +58,7 @@ the config, installs the hooks, starts the threads and registers the OSD callbac
   pack/RLE/LZMA sizes). Keep it that way.
 - Performance budget: ~30 FPS with 4 drawn friends and 5 large followers in a Pokémon Center.
 
-## 4. Build, test, debug
+## 🔨 4. Build, test, debug
 
 - Build: `make` in `3ds_plugin/` (requirements in the [README](../README.md#build-from-source)).
 - Translations: `3ds_plugin/tools/i18n/strings.py` → `python 3ds_plugin/tools/i18n/gen_lang.py`.
@@ -76,6 +78,6 @@ the config, installs the hooks, starts the threads and registers the OSD callbac
   - `mmo_dev_menu.txt`: opens the SELECT menu and walks every section (`demo`) or switches language 36 times
     (`idiomas`), taking screenshots.
 
-## 5. Pull requests
+## 🤝 5. Pull requests
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md).

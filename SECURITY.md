@@ -1,28 +1,38 @@
-# Security policy / Política de seguridad
+# 🔒 Security policy / Política de seguridad
 
-## Reporting a vulnerability / Avisar de una vulnerabilidad
+## 🚨 Reporting a vulnerability / Avisar de una vulnerabilidad
 
-Please **do not open a public issue**. Use GitHub's private reporting instead:
-**Security → Report a vulnerability** ([direct link](../../security/advisories/new)).
-Include what you found, how to reproduce it and which version (plugin and server) you used.
+> [!IMPORTANT]
+> Please **do not open a public issue**. Use GitHub's private reporting instead:
+> **Security → Report a vulnerability** ([direct link](https://github.com/SamuTecYT/ORAS-MMO/security/advisories/new)).
+>
+> Por favor, **no abras un issue público**. Usa el aviso privado de GitHub:
+> **Security → Report a vulnerability** ([enlace directo](https://github.com/SamuTecYT/ORAS-MMO/security/advisories/new)).
 
-Por favor, **no abras un issue público**. Usa el aviso privado de GitHub:
-**Security → Report a vulnerability** ([enlace directo](../../security/advisories/new)).
-Explica qué encontraste, cómo reproducirlo y qué versión (plugin y servidor) usaste.
+Tell us / Cuéntanos:
 
-## Supported versions / Versiones con soporte
+- 🔎 what you found / qué encontraste;
+- 🧪 how to reproduce it / cómo reproducirlo;
+- 🏷️ which version you used, plugin and server / qué versión usaste, del plugin y del servidor.
 
-Only the latest release (plugin 17.x, protocol 16) receives fixes.
-Solo la última versión (plugin 17.x, protocolo 16) recibe arreglos.
+## ✅ Supported versions / Versiones con soporte
 
-## Scope / Alcance
+| Version / Versión | Protocol / Protocolo | Fixes / Arreglos |
+|---|:---:|:---:|
+| 17.x (latest / la última) | 16 | ✅ |
+| Older / Anteriores | — | ❌ |
 
-- `server/server.py` (relay): crashes, memory/disk exhaustion, ways to bypass the room or connection limits.
-- The plugin: anything a server or a file (`mmo_*.txt`, `mmo_pokes_3d.bin`) could send to crash Azahar or run code.
-- Leaks: anything in the repository or the release ZIP that exposes private data.
+## 🎯 Scope / Alcance
 
-By design there are **no accounts**: the room code is a shared secret and nicknames are not authenticated
-(see "Security and privacy" in the [README](README.md#security-and-privacy)). That is not a vulnerability by itself.
+| Part / Parte | What counts / Qué cuenta |
+|---|---|
+| 🖥️ `server/server.py` | Crashes, memory or disk exhaustion, ways around the room or connection limits / Cuelgues, agotar memoria o disco, saltarse los límites de salas o conexiones |
+| 🎮 The plugin / El plugin | Anything a server or a file (`mmo_*.txt`, `mmo_pokes_3d.bin`) could send to crash Azahar or run code / Cualquier cosa que un servidor o un archivo pueda mandar para colgar Azahar o ejecutar código |
+| 📦 Leaks / Filtraciones | Anything in the repository or the release ZIP that exposes private data / Cualquier cosa del repositorio o del ZIP que exponga datos privados |
 
-Por diseño **no hay cuentas**: el código de sala es un secreto compartido y los apodos no se verifican (ver "Seguridad y
-privacidad" en el [README](README_ES.md#seguridad-y-privacidad)). Eso no es una vulnerabilidad en sí.
+> [!NOTE]
+> By design there are **no accounts**: the room code is a shared secret and nicknames are not verified (see
+> [Security and privacy](README.md#security-and-privacy)). That is not a vulnerability by itself.
+>
+> Por diseño **no hay cuentas**: el código de sala es un secreto compartido y los apodos no se verifican (ver
+> [Seguridad y privacidad](README_ES.md#seguridad-y-privacidad)). Eso no es una vulnerabilidad en sí.

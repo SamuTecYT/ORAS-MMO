@@ -24,7 +24,7 @@
   friend) or **Tailscale**. Friends use the host's ZeroTier/Tailscale IP as the server. Both work on Android too.
 - Or open TCP 9000 on the host's router, or use a VPS.
 - Allow Python / TCP 9000 in the Windows firewall (also on public networks).
-Full guide: `server/README.md` and the project README ("Play online without a rented server").
+Full guide: `server/README.md` and the project README ("Play with friends far away").
 
 You need your own legal copy of Pokémon Omega Ruby or Alpha Sapphire. Followers need the optional
 `mmo_pokes_3d.bin` pack (not included: it contains game graphics; build it from your own game with `tools/pokepack` in
@@ -56,7 +56,7 @@ the repository). Project: https://github.com/SamuTecYT/ORAS-MMO
   amigo) o **Tailscale**. Los amigos ponen como servidor la IP de ZeroTier/Tailscale del anfitrión. También en Android.
 - O abre el TCP 9000 en el router del anfitrión, o usa un VPS.
 - Permite Python / el TCP 9000 en el firewall de Windows (también en redes públicas).
-Guía completa: `server/README.md` y el README del proyecto ("Jugar por Internet sin servidor contratado").
+Guía completa: `server/README.md` y el README del proyecto ("Jugar con amigos lejos").
 
 Necesitas tu propia copia legal de Pokémon Rubí Omega o Zafiro Alfa. Los Pokémon acompañantes necesitan el paquete
 opcional `mmo_pokes_3d.bin` (no incluido: son gráficos del juego; créalo desde tu propio juego con `tools/pokepack` del
