@@ -161,15 +161,6 @@ ejecutan los jugadores), `LICENSE`, `SECURITY.md` y `.gitattributes`. Si crees q
 > **Nunca subas** archivos del juego ni nada sacado de él (ROMs, RomFS, `mmo_pokes_*.bin`, modelos, letras o texturas
 > extraídos), compilaciones (`.3gx`, ZIP), rankings, `.env` ni tu `ServerConfig.local.hpp`.
 
-## 🧑‍💼 Para quien mantiene el proyecto
-
-- Si es de alguien nuevo, GitHub te pide **«Approve and run workflows»**: púlsalo solo cuando el guardián diga 🟢 o 🟡
-  (así las comprobaciones nunca ejecutan algo que el guardián ya marcó en 🔴).
-- 🟢 y todo en verde: *Squash and merge*.
-- 🟡: antes de aceptarlo, pide una revisión del código (en Claude: `/requesting-code-review`) y prueba en un Azahar de pruebas el `.3gx` de la comprobación *plugin* (nunca en tu partida de verdad).
-- 🔴: no lo aceptes; quien lo envió tiene que corregirlo. Saltarte el bloqueo solo tras una revisión experta.
-- Nada se instala solo: después de aceptar, el servidor del VPS y los ZIP se actualizan a mano, como siempre.
-
 🔒 Los **problemas de seguridad** van por [SECURITY.md](SECURITY.md), nunca en un issue público.
 
 Al colaborar, aceptas que tu código se publique con la [licencia MIT](LICENSE).
