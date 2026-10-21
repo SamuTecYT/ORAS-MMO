@@ -13,8 +13,8 @@ jobs:
   server-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Unit tests
@@ -25,18 +25,23 @@ jobs:
     container:
       image: devkitpro/devkitarm:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # libctrpf and the Linux 3gxtool come from the CTRPF package repo (thepixellizeross). The repos go into the
-      # config file dkp-pacman really reads, which is not always /etc/pacman.conf inside this image.
+      # libctrpf and the Linux 3gxtool come from the CTRPF package repo (thepixellizeross). Only that repo is synced:
+      # the image already has devkitARM and libctru, and pkg.devkitpro.org often answers 403 to CI runners.
+      # The temporary config keeps the [options] of the one dkp-pacman really reads (not /etc/pacman.conf here).
       - name: Install libctrpf and 3gxtool
         run: |
           CONF=$(dkp-pacman -v -Q 2>/dev/null | sed -n 's/^Conf File *: *//p' | head -n 1)
           [ -n "$CONF" ] || CONF=/opt/devkitpro/pacman/etc/pacman.conf
-          echo "dkp-pacman config: $CONF"
-          printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' >> "$CONF"
-          printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' >> "$CONF"
-          dkp-pacman -Sy --noconfirm libctrpf 3gxtool
+          awk '/^\[/ { keep = ($0 == "[options]") } keep' "$CONF" > /tmp/ctrpf.conf
+          printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' >> /tmp/ctrpf.conf
+          printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' >> /tmp/ctrpf.conf
+          for try in 1 2 3; do
+            dkp-pacman --config /tmp/ctrpf.conf -Sy --noconfirm libctrpf 3gxtool && exit 0
+            sleep 15
+          done
+          exit 1
 
       - name: Build
         env:
@@ -48,7 +53,7 @@ jobs:
           make -C 3ds_plugin
           mkdir -p out && cp 3ds_plugin/3ds_plugin.3gx out/OrasMmo.3gx
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: OrasMmo-3gx
           path: out/OrasMmo.3gx
