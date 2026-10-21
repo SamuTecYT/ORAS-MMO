@@ -241,6 +241,8 @@ make                      # -> 3ds_plugin.3gx  (renómbralo a OrasMmo.3gx)
 - Los textos están en **`3ds_plugin/tools/i18n/strings.py`**; después de editarlos, ejecuta
   `python 3ds_plugin/tools/i18n/gen_lang.py` (regenera `Includes/LangTable.inc` y comprueba los `%s`/`%d`).
 - Pruebas del servidor: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- **¿Sin devkitPro?** En tu fork, abre **Actions → Build plugin and test server → Run workflow**: pasa las pruebas
+  del servidor y te deja descargar el `OrasMmo.3gx` público (artefacto de la ejecución, se guarda 30 días).
 - ZIP para publicar: `python tools/package_public.py ruta/a/OrasMmo.3gx` → `dist/ORAS_MMO_v17.0_Global.zip`.
 
 ## Hazlo tuyo (programadores)

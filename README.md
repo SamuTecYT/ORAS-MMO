@@ -235,6 +235,8 @@ make                      # -> 3ds_plugin.3gx  (rename it to OrasMmo.3gx)
 - Translations live in **`3ds_plugin/tools/i18n/strings.py`**; after editing, run
   `python 3ds_plugin/tools/i18n/gen_lang.py` (it regenerates `Includes/LangTable.inc` and checks `%s`/`%d`).
 - Server tests: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- **No toolchain?** In your fork, open **Actions → Build plugin and test server → Run workflow**: it runs the server
+  tests and lets you download the public `OrasMmo.3gx` (run artifact, kept 30 days).
 - Release ZIP: `python tools/package_public.py path/to/OrasMmo.3gx` → `dist/ORAS_MMO_v17.0_Global.zip`.
 
 ## Make it yours (developers)

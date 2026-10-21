@@ -12,7 +12,8 @@ Thanks for wanting to improve Pokémon ORAS MMO!
 4. **Texts**: never hardcode a new UI text in one language only. Add it to `3ds_plugin/tools/i18n/strings.py` (all 7
    languages; English is used if you can't translate) and run `python 3ds_plugin/tools/i18n/gen_lang.py`.
 5. **Before sending a pull request**:
-   - the plugin builds without new warnings (`make` in `3ds_plugin/`);
+   - the plugin builds without new warnings (`make` in `3ds_plugin/`, or **Actions → Build plugin and test server**
+     in your fork);
    - server tests pass: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`;
    - you tested it in Azahar (say what you tested: game, PC/Android, number of players);
    - `python tools/prepublish_check.py` reports nothing private.
@@ -37,7 +38,8 @@ explain *why*). By contributing you agree your code is released under the [MIT L
 4. **Textos**: nunca pongas un texto nuevo solo en un idioma. Añádelo en `3ds_plugin/tools/i18n/strings.py` (los 7
    idiomas; si no sabes traducirlo, se usa el inglés) y ejecuta `python 3ds_plugin/tools/i18n/gen_lang.py`.
 5. **Antes de mandar un pull request**:
-   - el plugin compila sin avisos nuevos (`make` en `3ds_plugin/`);
+   - el plugin compila sin avisos nuevos (`make` en `3ds_plugin/`, o **Actions → Build plugin and test server** en tu
+     fork);
    - pasan las pruebas del servidor (`python -m unittest server/test_server_ranking.py server/test_server_limits.py`);
    - lo probaste en Azahar (cuenta qué probaste: juego, PC/Android, cuántos jugadores);
    - `python tools/prepublish_check.py` no encuentra nada privado.
