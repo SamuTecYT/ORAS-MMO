@@ -93,6 +93,9 @@ pm2 start server.py --interpreter python3 --name oras-mmo
 | `ORAS_QUEUE_MAX` | `256` | Pending packets per player (old positions are dropped first) |
 | `ORAS_MAX_CLIENTS` | `300` | Open connections in total |
 | `ORAS_MAX_PER_IP` | `16` | Open connections from one IP |
+| `ORAS_MAX_PER_IP_ROOM` | `4` | Players from one IP in the same room (so one IP can't fill a room) |
+| `ORAS_ROOM_TRIES` | `5` | Different room codes one IP may try per window (stops guessing other groups' codes) |
+| `ORAS_ROOM_TRIES_WINDOW` | `600` | That window, in seconds |
 | `ORAS_MAX_ROOMS` | `100` | Rooms open at the same time |
 | `ORAS_RANK_MAX_ROOMS` | `200` | Different rooms with a saved ranking |
 | `ORAS_MAX_PPS` | `120` | Packets per second one player may send (the plugin sends ~30); extra ones are dropped |
@@ -111,6 +114,8 @@ Real battles and trades go through Azahar's own multiplayer room (UDP 24872). Ho
 
 - 🔑 There are no accounts: the **room code** is the only thing that separates groups. Use a private one, or
   `ORAS_ROOMS`.
+- 🧱 Connections from this same computer (`127.x`) don't count for the per-room and room-code limits, so you can
+  test with local bots.
 - 📄 Ranking files contain your players' nicknames and stats: don't publish them.
 - 📝 The server logs the IP addresses that connect (useful to spot abuse): keep the logs private.
 - 🧪 Tests: `python -m unittest test_server_ranking.py test_server_limits.py`.
@@ -181,6 +186,9 @@ Usa el ejemplo de **systemd** o **PM2** de la [parte en inglés](#english) (los 
 | `ORAS_QUEUE_MAX` | `256` | Paquetes pendientes por jugador (primero se descartan las posiciones viejas) |
 | `ORAS_MAX_CLIENTS` | `300` | Conexiones abiertas en total |
 | `ORAS_MAX_PER_IP` | `16` | Conexiones abiertas desde una misma IP |
+| `ORAS_MAX_PER_IP_ROOM` | `4` | Jugadores de una misma IP en la misma sala (así una IP no llena una sala) |
+| `ORAS_ROOM_TRIES` | `5` | Códigos de sala distintos que puede probar una IP en esa ventana (evita adivinar el de otros) |
+| `ORAS_ROOM_TRIES_WINDOW` | `600` | Esa ventana, en segundos |
 | `ORAS_MAX_ROOMS` | `100` | Salas abiertas a la vez |
 | `ORAS_RANK_MAX_ROOMS` | `200` | Salas distintas con ranking guardado |
 | `ORAS_MAX_PPS` | `120` | Paquetes por segundo que puede mandar un jugador (el plugin manda ~30); los de más se descartan |
@@ -198,6 +206,8 @@ Los combates e intercambios de verdad van por la sala multijugador de Azahar (UD
 ## 🔒 Seguridad
 
 - 🔑 No hay cuentas: el **código de sala** es lo único que separa a cada grupo. Usa uno privado, u `ORAS_ROOMS`.
+- 🧱 Las conexiones desde este mismo equipo (`127.x`) no cuentan para los límites por sala y de códigos, para que
+  puedas probar con bots locales.
 - 📄 Los archivos de ranking llevan los apodos y datos de tus jugadores: no los publiques.
 - 📝 El servidor apunta las IP que se conectan (sirve para detectar abusos): guarda el registro en privado.
 - 🧪 Pruebas: `python -m unittest test_server_ranking.py test_server_limits.py`.

@@ -11,14 +11,16 @@ README). Reference implementations: `server/server.py` and `3ds_plugin/Includes/
    characters (`0x20`–`0x7E`), no terminator.
 2. The server answers one line:
    - `OK:ROOM:<room>:<id>\n` — `<id>` is your player slot, `1..12`.
-   - `ERROR:ROOM_FULL\n` — the room (or the server's room limit) is full.
-   - `ERROR:ROOM_DENIED\n` — the server only accepts other rooms (`ORAS_ROOMS`).
+   - `ERROR:ROOM_FULL\n` — the room (or the server's room limit) is full, or it already has 4 players from your IP.
+   - `ERROR:ROOM_DENIED\n` — the server only accepts other rooms (`ORAS_ROOMS`), or your IP tried too many different
+     room codes (5 in 10 minutes). Both cases get the same answer, so it doesn't tell whether a room exists.
    - The connection is simply closed if a connection limit is reached or the code is invalid.
 3. From then on both sides exchange **fixed 64-byte packets**. Bytes received right after the `\n` already belong to
    the packet stream.
 
 The server overwrites `player_id` of every packet with the sender's real slot, relays each packet to everyone else in
-the room (except whispers, see CHAT) and frees a slot after 60 s without a full packet. Send a `PING` at least every
+the room (except whispers, see CHAT). Only the types a client sends are relayed: `LEAVE` and `RANK_SNAPSHOT` coming
+from a client are dropped and frees a slot after 60 s without a full packet. Send a `PING` at least every
 few seconds while idle.
 
 ## 📦 2. Packet layout (64 bytes)

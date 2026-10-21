@@ -18,6 +18,9 @@ se guarda (ni al cargar archivos viejos).
 
 v17.0: límites contra saturación (muchas conexiones o salas falsas): conexiones en total y por IP, salas abiertas a
 la vez y salas con ranking guardado. Opcional: ORAS_ROOMS = lista de salas permitidas (servidor privado).
+v17.0 r3: como mucho 4 jugadores de una misma IP en una sala, 5 códigos de sala distintos por IP cada 10 min (misma
+respuesta que una sala no permitida) y solo se reenvían los tipos de paquete que manda el plugin (lista blanca). Este
+mismo equipo (127.x) no cuenta para esos límites, para poder probar con bots locales.
 
 Variables de entorno opcionales:
   PORT (9000) · ORAS_MAX_PLAYERS (12) · ORAS_IDLE_TIMEOUT (60 s) · ORAS_QUEUE_MAX (256 paquetes)
@@ -25,6 +28,7 @@ Variables de entorno opcionales:
   ORAS_MAX_CLIENTS (300) · ORAS_MAX_PER_IP (16) · ORAS_MAX_ROOMS (100) · ORAS_RANK_MAX_ROOMS (200)
   ORAS_MAX_PPS (120 paquetes/s por jugador; el plugin manda ~30) · ORAS_BURST (240)
   ORAS_ROOMS ("" = cualquier sala; p. ej. "MiSala,Otra" = solo esas)
+  ORAS_MAX_PER_IP_ROOM (4) · ORAS_ROOM_TRIES (5) · ORAS_ROOM_TRIES_WINDOW (600 s)
 """
 
 import asyncio
@@ -70,6 +74,14 @@ RANK_MAX_ROOMS = int(os.environ.get("ORAS_RANK_MAX_ROOMS", 200))  # salas distin
 MAX_PPS = float(os.environ.get("ORAS_MAX_PPS", 120))           # paquetes por segundo de un jugador (media)
 BURST = float(os.environ.get("ORAS_BURST", 240))                # ráfaga permitida
 ALLOWED_ROOMS = frozenset(r.strip() for r in os.environ.get("ORAS_ROOMS", "").split(",") if r.strip())
+# v17.0 r3 (auditoría de seguridad): una sola IP ya no puede llenar una sala, ni probar muchos códigos de sala
+MAX_PER_IP_ROOM = int(os.environ.get("ORAS_MAX_PER_IP_ROOM", 4))           # jugadores de una misma IP en una sala
+ROOM_TRIES = int(os.environ.get("ORAS_ROOM_TRIES", 5))                     # códigos de sala distintos por IP...
+ROOM_TRIES_WINDOW = float(os.environ.get("ORAS_ROOM_TRIES_WINDOW", 600))   # ...en esta ventana (s)
+EXEMPT_LOOPBACK = True          # este mismo equipo (pruebas, bots locales) no cuenta para esos dos límites
+# Solo se reenvían los tipos que manda el plugin. LEAVE (0x23) y RANK_SNAPSHOT (0x33) los genera solo el servidor:
+# si llegan de un cliente se descartan (salidas o ranking falsos para los demás).
+RELAY_TYPES = frozenset((PKT_POSITION, 0x02, 0x03, 0x20, 0x21, 0x22, PKT_PING, PKT_STATS, 0x32))
 OFF_MODEL, OFF_FLAGS, OFF_VERSION, OFF_NAME, OFF_MSG = 2, 23, 26, 30, 44
 STATS_LEN = 18
 DROPPABLE = (PKT_POSITION, PKT_PING)    # "último valor gana": se pueden descartar si un cliente va lento
@@ -79,10 +91,12 @@ class Client:
     """Un jugador conectado. Tiene su propia cola de salida y su propia tarea escritora,
     así un cliente lento (combate, app en 2.º plano, Wi-Fi mala) nunca frena a los demás."""
 
-    def __init__(self, pid: int, room_code: str, writer: asyncio.StreamWriter):
+    def __init__(self, pid: int, room_code: str, writer: asyncio.StreamWriter, ip: str = ""):
         self.pid = pid
         self.room_code = room_code
         self.writer = writer
+        self.ip = ip            # v17.0 r3: para el límite de jugadores por IP en una sala
+        self.bad_types = 0      # paquetes de tipos que no se reenvían
         self.queue = collections.deque()
         self.wake = asyncio.Event()
         self.ready = False      # recibe retransmisiones solo tras enviar su 1.er paquete (ya leyó el OK)
@@ -154,6 +168,35 @@ rooms: Dict[str, Dict[int, Client]] = {}
 # v17.0: conexiones abiertas (en total y por IP), para los límites contra saturación
 conn_total = 0
 conn_by_ip: Dict[str, int] = {}
+# v17.0 r3: códigos de sala probados por cada IP (código -> última vez) y último aviso en el registro por IP
+room_tries: Dict[str, Dict[str, float]] = {}
+tries_warned: Dict[str, float] = {}
+
+
+def is_loopback(ip: str) -> bool:
+    return EXEMPT_LOOPBACK and (ip.startswith("127.") or ip in ("::1", "::ffff:127.0.0.1"))
+
+
+def room_try_allowed(ip: str, code: str, now: float) -> bool:
+    """v17.0 r3: una IP puede probar como mucho ROOM_TRIES códigos de sala distintos cada ROOM_TRIES_WINDOW s (así
+    no se puede ir probando códigos hasta dar con la sala de otro grupo). Volver a la misma sala no cuenta."""
+    if is_loopback(ip):
+        return True
+    tried = room_tries.setdefault(ip, {})
+    for old in [c for c, t in tried.items() if now - t > ROOM_TRIES_WINDOW]:
+        del tried[old]
+    if code not in tried and len(tried) >= ROOM_TRIES:
+        return False
+    tried[code] = now
+    return True
+
+
+def prune_room_tries(now: float) -> None:
+    """Olvida las IP que ya no tienen intentos dentro de la ventana (para que la tabla no crezca sin fin)."""
+    for ip in [i for i, tried in room_tries.items() if all(now - t > ROOM_TRIES_WINDOW for t in tried.values())]:
+        del room_tries[ip]
+    for ip in [i for i, t in tries_warned.items() if now - t > ROOM_TRIES_WINDOW]:
+        del tries_warned[ip]
 
 
 def packet_name(pkt: bytes) -> str:
@@ -337,6 +380,16 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             if data:
                 log.warning(f"⚠️ Código de sala inválido desde {addr[0]}: {data[:32]!r}")
             return
+        # v17.0 r3: misma respuesta que una sala no permitida (no dice si la sala existe)
+        now = time.monotonic()
+        if not room_try_allowed(ip, room_code, now):
+            if ip not in tries_warned:
+                tries_warned[ip] = now
+                log.warning(f"⛔ {ip} prueba demasiados códigos de sala distintos (más de {ROOM_TRIES} en {ROOM_TRIES_WINDOW:.0f} s): rechazada")
+            writer.write(b"ERROR:ROOM_DENIED\n")
+            await asyncio.wait_for(writer.drain(), timeout=5.0)
+            room_code = None
+            return
         if ALLOWED_ROOMS and room_code not in ALLOWED_ROOMS:
             log.warning(f"⛔ Sala no permitida '{room_code}' desde {addr[0]}")
             writer.write(b"ERROR:ROOM_DENIED\n")
@@ -357,8 +410,14 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             writer.write(b"ERROR:ROOM_FULL\n")
             await asyncio.wait_for(writer.drain(), timeout=5.0)
             return
+        # v17.0 r3: una sola IP no puede ocupar toda la sala (para el plugin es "sala llena": reintenta en 15 s)
+        if not is_loopback(ip) and sum(1 for c in room.values() if c.ip == ip) >= MAX_PER_IP_ROOM:
+            log.warning(f"⛔ Sala '{room_code}': ya hay {MAX_PER_IP_ROOM} jugadores desde {ip}. Rechazado")
+            writer.write(b"ERROR:ROOM_FULL\n")
+            await asyncio.wait_for(writer.drain(), timeout=5.0)
+            return
 
-        client = Client(player_id, room_code, writer)
+        client = Client(player_id, room_code, writer, ip)
         room[player_id] = client
         log.info(f"✅ Jugador {player_id} conectado a la sala '{room_code}' desde {addr[0]} ({len(room)}/{MAX_PLAYERS})")
 
@@ -377,6 +436,11 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             if not client.allow():                    # v17.0: demasiados paquetes por segundo: se descartan
                 if client.flooded in (1, 1000):
                     log.warning(f"⛔ Jugador {player_id} (sala '{room_code}', {addr[0]}) manda demasiados paquetes: se descartan")
+                continue
+            if packet[0] not in RELAY_TYPES:          # v17.0 r3: lista blanca de tipos (ni ranking ni salidas falsos)
+                client.bad_types += 1
+                if client.bad_types in (1, 1000):
+                    log.warning(f"⛔ Jugador {player_id} (sala '{room_code}', {addr[0]}) manda paquetes de tipo 0x{packet[0]:02X}: se descartan")
                 continue
             if packet[1] != player_id:                # anti-suplantación
                 packet = packet[:1] + id_byte + packet[2:]
@@ -444,6 +508,7 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
 async def status_loop():
     while True:
         await asyncio.sleep(STATUS_INTERVAL)
+        prune_room_tries(time.monotonic())
         players = sum(len(r) for r in rooms.values())
         detail = ", ".join(f"'{k}':{len(v)}" for k, v in sorted(rooms.items()))
         log.info(f"📊 Estado: {len(rooms)} sala(s), {players} jugador(es) conectados" + (f" [{detail}]" if detail else ""))
@@ -461,6 +526,8 @@ async def main():
     log.info(f"🚀 Servidor ORAS MMO ACTIVO en el puerto {PORT_TCP} (TCP)")
     log.info("   Crossplay: Azahar PC y Azahar Android")
     log.info(f"   Máximo {MAX_PLAYERS} jugadores por sala · inactividad {IDLE_TIMEOUT:.0f}s")
+    log.info(f"   Por IP: {MAX_PER_IP} conexiones, {MAX_PER_IP_ROOM} en una misma sala, {ROOM_TRIES} códigos de sala cada {ROOM_TRIES_WINDOW:.0f}s")
+    log.info(f"   Salas permitidas: {', '.join(sorted(ALLOWED_ROOMS)) if ALLOWED_ROOMS else 'cualquiera'}")
     log.info("   Esperando conexiones de jugadores...")
     log.info("==================================================")
     status = asyncio.ensure_future(status_loop())
