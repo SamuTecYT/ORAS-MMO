@@ -287,9 +287,9 @@ def check_contract(hpp: Optional[bytes], srv: Optional[bytes]) -> List[Finding]:
         bad("no encuentro el paquete PlayerPacket en Protocol.hpp", "PlayerPacket not found in Protocol.hpp", PROTOCOL_HPP)
         return f
     if d.get("MMO_DEFAULT_SERVER") != "127.0.0.1":
-        f.append(Finding(BLOCK, PROTOCOL_HPP, "el servidor por defecto del plugin público tiene que ser 127.0.0.1 "
+        f.append(Finding(BLOCK, PROTOCOL_HPP, "El servidor por defecto del plugin público tiene que ser 127.0.0.1 "
                          "(si no, todos los jugadores se conectarían a otro servidor)",
-                         "the public plugin's default server must stay 127.0.0.1 (otherwise every player would "
+                         "The public plugin's default server must stay 127.0.0.1 (otherwise every player would "
                          "connect to someone else's server)"))
     psize = d.get("MMO_PACKET_SIZE")
     if not (size == psize == env.get("PKT_SIZE") == 64):
@@ -541,8 +541,9 @@ def report(findings: List[Finding], stats: dict, contract_only: bool = False) ->
     icon = {BLOCK: "🔴", WARN: "🟡"}
     lines = [MARKER, "## 🛡️ Guardián del PR — %s" % head_es, ""]
     if not contract_only:
-        lines.append("%d archivos · +%d / −%d líneas · el guardián solo lee el cambio, nunca lo ejecuta."
-                     % (stats["files"], stats["added"], stats["removed"]))
+        lines.append("%d %s · +%d / −%d líneas · el guardián solo lee el cambio, nunca lo ejecuta."
+                     % (stats["files"], "archivo" if stats["files"] == 1 else "archivos", stats["added"],
+                        stats["removed"]))
         lines.append("")
     shown = findings[:40]
     if shown:
