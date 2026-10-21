@@ -1,31 +1,81 @@
 name: Build plugin and test server
 
-# Solo a mano (pestaña Actions -> Run workflow). Compila la versión PÚBLICA (sin ServerConfig.local.hpp: servidor
-# 127.0.0.1) y pasa las pruebas del servidor. No publica nada: el .3gx queda como artefacto de la ejecución.
-# Manual only. Builds the PUBLIC plugin (no ServerConfig.local.hpp) and runs the server tests. Publishes nothing.
+# Every pull request to main (and by hand: Actions -> Run workflow). It builds the PUBLIC plugin (no
+# ServerConfig.local.hpp: server 127.0.0.1), fails on new compiler warnings compared with main, runs the server tests
+# and the regression suite, and checks the translations. It publishes and deploys NOTHING.
+# Security: read-only token, no secrets, outside contributors need the maintainer's approval before it runs, and every
+# action and the build image are pinned to an exact version (update the pins on purpose, never to a moving tag).
+# Cada pull request a main (y a mano). Compila el plugin PÚBLICO, falla si hay avisos nuevos respecto a main, pasa las
+# pruebas del servidor y comprueba las traducciones. No publica ni instala nada.
 on:
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
-  server-tests:
+  checks:
+    name: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Translations are generated from strings.py
+        run: |
+          python 3ds_plugin/tools/i18n/gen_lang.py
+          git diff --exit-code -- 3ds_plugin/Includes/LangTable.inc || {
+            echo "::error::LangTable.inc is out of date: run python 3ds_plugin/tools/i18n/gen_lang.py and commit it"; exit 1; }
+      - name: Plugin and server speak the same protocol
+        run: python tools/pr_guard.py --contract-only
+      - name: Guard tests
+        run: python -m unittest tools/test_pr_guard.py -v
+
+  server-tests:
+    name: server-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Unit tests
         run: python -m unittest server/test_server_ranking.py server/test_server_limits.py -v
+      - name: Regression (framing, slow clients, old clients, 12 players at 30 Hz)
+        run: python server/regression_server.py server/server.py
 
   plugin:
+    name: plugin
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     container:
-      image: devkitpro/devkitarm:latest
+      # devkitpro/devkitarm:20260610 (same as "latest" on 2026-10-21). To update: new tag AND its digest.
+      image: devkitpro/devkitarm@sha256:116afba8df8453961de2936ffab20dd441edf4d682856c1ec8b0e53d7ed0bbf5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: pr
+          persist-credentials: false
+      - name: Main, to compare warnings
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
 
       # libctrpf and the Linux 3gxtool come from the CTRPF package repo (thepixellizeross). Only that repo is synced:
       # the image already has devkitARM and libctru, and pkg.devkitpro.org often answers 403 to CI runners.
@@ -43,18 +93,32 @@ jobs:
           done
           exit 1
 
-      - name: Build
+      - name: Build and count warnings (no new ones allowed)
         env:
           DEVKITPRO: /opt/devkitpro
           DEVKITARM: /opt/devkitpro/devkitARM
         run: |
           export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
-          test ! -f 3ds_plugin/Includes/ServerConfig.local.hpp
-          make -C 3ds_plugin
-          mkdir -p out && cp 3ds_plugin/3ds_plugin.3gx out/OrasMmo.3gx
+          build() {
+            test ! -f "$1/3ds_plugin/Includes/ServerConfig.local.hpp"
+            make -C "$1/3ds_plugin" EXTRA_CXXFLAGS="-Wall -Wextra -Wno-unused-parameter" > "$1.log" 2>&1 || { tail -n 60 "$1.log"; return 1; }
+            test -f "$1/3ds_plugin/3ds_plugin.3gx"
+          }
+          build pr
+          now=$(grep -c "warning:" pr.log || true)
+          before=$now
+          if [ -d base ]; then build base; before=$(grep -c "warning:" base.log || true); fi
+          echo "Compiler warnings: main $before -> this change $now" | tee -a "$GITHUB_STEP_SUMMARY"
+          grep "warning:" pr.log | sed 's#^.*/3ds_plugin/##' | head -n 40 || true
+          if [ "$now" -gt "$before" ]; then
+            echo "::error::This change adds $((now - before)) compiler warning(s). Fix them before merging."
+            exit 1
+          fi
+          mkdir -p out && cp pr/3ds_plugin/3ds_plugin.3gx out/OrasMmo.3gx
 
-      - uses: actions/upload-artifact@v7
+      # Built from the pull request's code: only for testing in a test Azahar AFTER reviewing the code. Never release it.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: OrasMmo-3gx
+          name: OrasMmo-3gx-test-only
           path: out/OrasMmo.3gx
-          retention-days: 30
+          retention-days: 7

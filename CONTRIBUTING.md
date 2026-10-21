@@ -26,15 +26,39 @@ as writing code.
 5. **Open the pull request** and say what you changed and how you tested it.
 
 > [!TIP]
-> No devkitPro on your PC? In your fork, open **Actions → Build plugin and test server → Run workflow**. It builds
-> the plugin and runs the server tests for you.
+> No devkitPro on your PC? Just open the pull request: the checks build the plugin and run the server tests
+> for you (or, in your fork: **Actions → Build plugin and test server → Run workflow**).
 
 ## ✅ Before you send it
 
-- [ ] The plugin builds **without new warnings** (`make` in `3ds_plugin/`, or the Actions workflow above).
-- [ ] The server tests pass: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- [ ] `python tools/pr_guard.py` (your commits vs `origin/main`) says 🟢 or 🟡.
+- [ ] The plugin builds **without new warnings** (`make EXTRA_CXXFLAGS="-Wall -Wextra -Wno-unused-parameter"` in
+      `3ds_plugin/`, or the Actions workflow above).
+- [ ] The server tests pass: `python -m unittest server/test_server_ranking.py server/test_server_limits.py` and
+      `python server/regression_server.py`.
 - [ ] You tested it **in Azahar**, and you say how: game, PC or Android, number of players.
 - [ ] `python tools/prepublish_check.py` reports nothing private.
+
+## 🤖 What happens when you open a pull request
+
+1. 🛡️ **The guard** (`tools/pr_guard.py`, always the copy from `main`: your pull request can't change it) reads your
+   change, **without running it**, and comments a report:
+   - 🟢 nothing sensitive;
+   - 🟡 sensitive area (game memory, network, protocol, server limits...): the maintainer reviews it and tests it in
+     Azahar;
+   - 🔴 blocked until you fix it: game files or builds, binaries, files over 1 MB, secrets, real IP addresses or web
+     addresses in the plugin or the server, a different default server, new writes into the game's memory, code or save
+     outside the approved files, network code outside `NetworkClient`, server code that runs programs or connects out,
+     new server dependencies, plugin and server no longer agreeing on the protocol, or **protected files**.
+2. ⚙️ **The checks** build the plugin (no new compiler warnings compared with `main`), run the server's unit and
+   regression tests, check the protocol and the translations, and attach the built `.3gx` (for testing only).
+   If it's your first pull request here, they wait until the maintainer allows them to run.
+3. 👀 **The maintainer reviews** it (every change needs their approval) and merges it with *Squash and merge*.
+   Merging never installs anything: the server and the releases are updated by hand, later.
+
+🔒 **Protected files** (only the maintainer changes them): `.github/` (workflows, `CODEOWNERS`), `tools/pr_guard.py`,
+`tools/privacy.py`, `tools/prepublish_check.py`, `tools/package_public.py`, `packaging/` (what players run),
+`LICENSE`, `SECURITY.md` and `.gitattributes`. If you think one needs a change, open an issue.
 
 ## 📏 Golden rules
 
@@ -86,15 +110,40 @@ como programar.
 5. **Abre el pull request** y cuenta qué cambiaste y cómo lo probaste.
 
 > [!TIP]
-> ¿No tienes devkitPro en tu PC? En tu fork, abre **Actions → Build plugin and test server → Run workflow**. Compila
-> el plugin y pasa las pruebas del servidor por ti.
+> ¿No tienes devkitPro en tu PC? Abre el pull request y las comprobaciones compilan el plugin y pasan las
+> pruebas por ti (o, en tu fork: **Actions → Build plugin and test server → Run workflow**).
 
 ## ✅ Antes de enviarlo
 
-- [ ] El plugin compila **sin avisos nuevos** (`make` en `3ds_plugin/`, o el workflow de Actions de arriba).
-- [ ] Pasan las pruebas del servidor: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- [ ] `python tools/pr_guard.py` (tus commits frente a `origin/main`) dice 🟢 o 🟡.
+- [ ] El plugin compila **sin avisos nuevos** (`make EXTRA_CXXFLAGS="-Wall -Wextra -Wno-unused-parameter"` en
+      `3ds_plugin/`, o el workflow de Actions de arriba).
+- [ ] Pasan las pruebas del servidor: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`
+      y `python server/regression_server.py`.
 - [ ] Lo probaste **en Azahar**, y cuentas cómo: juego, PC o Android, cuántos jugadores.
 - [ ] `python tools/prepublish_check.py` no encuentra nada privado.
+
+## 🤖 Qué pasa al abrir un pull request
+
+1. 🛡️ **El guardián** (`tools/pr_guard.py`, siempre la copia de `main`: tu pull request no puede cambiarlo) lee tu
+   cambio, **sin ejecutarlo**, y deja un informe:
+   - 🟢 nada delicado;
+   - 🟡 zona delicada (memoria del juego, red, protocolo, límites del servidor...): quien mantiene el proyecto lo
+     revisa y lo prueba en Azahar;
+   - 🔴 bloqueado hasta que lo corrijas: archivos del juego o compilaciones, binarios, archivos de más de 1 MB,
+     secretos, direcciones IP reales o direcciones web en el plugin o el servidor, otro servidor por defecto,
+     escrituras nuevas en la memoria, el código o la partida del juego fuera de los archivos aprobados, código de red
+     fuera de `NetworkClient`, un servidor que ejecuta programas o se conecta hacia fuera, dependencias nuevas del
+     servidor, plugin y servidor que ya no se entienden, o **archivos protegidos**.
+2. ⚙️ **Las comprobaciones** compilan el plugin (sin avisos nuevos frente a `main`), pasan las pruebas del servidor
+   (normales y de regresión), revisan el protocolo y las traducciones, y adjuntan el `.3gx` compilado (solo para
+   probar). Si es tu primer pull request aquí, esperan a que quien mantiene el proyecto les dé permiso.
+3. 👀 **Quien mantiene el proyecto lo revisa** (todo cambio necesita su aprobación) y lo acepta con *Squash and
+   merge*. Aceptarlo no instala nada: el servidor y las publicaciones se actualizan a mano, después.
+
+🔒 **Archivos protegidos** (solo los cambia quien mantiene el proyecto): `.github/` (workflows, `CODEOWNERS`),
+`tools/pr_guard.py`, `tools/privacy.py`, `tools/prepublish_check.py`, `tools/package_public.py`, `packaging/` (lo que
+ejecutan los jugadores), `LICENSE`, `SECURITY.md` y `.gitattributes`. Si crees que uno necesita un cambio, abre un issue.
 
 ## 📏 Reglas de oro
 
@@ -111,6 +160,15 @@ como programar.
 > [!WARNING]
 > **Nunca subas** archivos del juego ni nada sacado de él (ROMs, RomFS, `mmo_pokes_*.bin`, modelos, letras o texturas
 > extraídos), compilaciones (`.3gx`, ZIP), rankings, `.env` ni tu `ServerConfig.local.hpp`.
+
+## 🧑‍💼 Para quien mantiene el proyecto
+
+- Si es de alguien nuevo, GitHub te pide **«Approve and run workflows»**: púlsalo solo cuando el guardián diga 🟢 o 🟡
+  (así las comprobaciones nunca ejecutan algo que el guardián ya marcó en 🔴).
+- 🟢 y todo en verde: *Squash and merge*.
+- 🟡: antes de aceptarlo, pide una revisión del código (en Claude: `/requesting-code-review`) y prueba en un Azahar de pruebas el `.3gx` de la comprobación *plugin* (nunca en tu partida de verdad).
+- 🔴: no lo aceptes; quien lo envió tiene que corregirlo. Saltarte el bloqueo solo tras una revisión experta.
+- Nada se instala solo: después de aceptar, el servidor del VPS y los ZIP se actualizan a mano, como siempre.
 
 🔒 Los **problemas de seguridad** van por [SECURITY.md](SECURITY.md), nunca en un issue público.
 

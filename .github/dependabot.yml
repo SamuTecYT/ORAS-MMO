@@ -1,0 +1,13 @@
+# Keeps the pinned GitHub actions up to date (one grouped pull request per month). The PR guard lets Dependabot change
+# only the "uses: owner/action@<sha>" lines of the workflows; anything else in .github/ stays owner-only.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"

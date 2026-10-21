@@ -1,0 +1,43 @@
+name: PR guard
+
+# Checks every pull request with the guard from MAIN (tools/pr_guard.py): the pull request can't change the guard or
+# this workflow. It only READS the pull request with git (diff and file contents): it never checks it out, builds it
+# or runs it, so it is safe to run with permission to comment. It posts a 🟢/🟡/🔴 report on the pull request and
+# fails on 🔴 (forbidden files, secrets, real IPs, new writes into the game's memory, protected files, protocol
+# mismatch...). Details: CONTRIBUTING.md.
+# Revisa cada PR con el guardián de MAIN (el PR no puede cambiarlo). Solo lee el PR; nunca lo ejecuta.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write   # only to post the report as a comment
+
+concurrency:
+  group: pr-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main (the guard itself, never the pull request)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch the pull request as data only
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: git fetch --no-tags --no-recurse-submodules origin "+refs/pull/${PR}/head:refs/remotes/pr/head"
+
+      - name: Check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: python3 tools/pr_guard.py --base HEAD --head refs/remotes/pr/head --author "$AUTHOR" --comment "$PR"

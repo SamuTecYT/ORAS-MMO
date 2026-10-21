@@ -62,7 +62,9 @@ the config, installs the hooks, starts the threads and registers the OSD callbac
 
 - Build: `make` in `3ds_plugin/` (requirements in the [README](../README.md#build-from-source)).
 - Translations: `3ds_plugin/tools/i18n/strings.py` → `python 3ds_plugin/tools/i18n/gen_lang.py`.
-- Server tests: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- Server tests: `python -m unittest server/test_server_ranking.py server/test_server_limits.py` and
+  `python server/regression_server.py` (framing, slow and old clients, 12 players at 30 Hz).
+- PR guard: `python tools/pr_guard.py` (your commits vs `origin/main`; the same check runs on every pull request).
 - Followers pack: [tools/pokepack](../tools/pokepack/README.md).
 - **Fake players**: run `server/server.py` locally, point the plugin to `127.0.0.1` and start bots with
   `python tools/fake_players.py --zone 259 --cx 351 --cy 380 --h 2 --n 4 --variant 3 --lead 373,473,297,6`

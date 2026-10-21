@@ -18,7 +18,8 @@ FORBIDDEN_NAMES = [
     (re.compile(r"(^|/)\.env$"), "environment file with secrets (only .env.example may be published)"),
     (re.compile(r"(^|/)ServerConfig\.local\.hpp$"), "your private default server"),
     (re.compile(r"(^|/)\.private_patterns\.txt$"), "the private patterns list itself"),
-    (re.compile(r"(^|/)mmo_(server|room|name|settings|log|ip)\.txt$"), "plugin runtime file from a real install"),
+    (re.compile(r"(^|/)mmo_(server|room|name|settings|log|ip|key)\.txt$"), "plugin runtime file from a real install"),
+    (re.compile(r"(^|/)mmo_dev_[^/]*$"), "developer test file (scripts, screenshots)"),
 ]
 
 # Secret-looking content, checked in every text file

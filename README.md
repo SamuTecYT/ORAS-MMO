@@ -453,7 +453,10 @@ Then run `pacman -Sy libctrpf 3gxtool` (on Linux, `dkp-pacman`). The workflow in
 - Flags: `-Os -std=gnu++11 -fno-rtti -fno-exceptions`; plugin memory `10MiB` (`CTRPluginFramework.plgInfo`).
 - **Translations** live in `3ds_plugin/tools/i18n/strings.py`. After editing, run
   `python 3ds_plugin/tools/i18n/gen_lang.py` (it regenerates `Includes/LangTable.inc` and checks `%s` / `%d`).
-- **Server tests:** `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- **Server tests:** `python -m unittest server/test_server_ranking.py server/test_server_limits.py` and
+  `python server/regression_server.py`.
+- **Before a pull request:** `python tools/pr_guard.py`. Every pull request is checked automatically (the guard,
+  the build and the tests): see [CONTRIBUTING.md](CONTRIBUTING.md#-what-happens-when-you-open-a-pull-request).
 - **Release ZIP:** `python tools/package_public.py path/to/OrasMmo.3gx` → `dist/ORAS_MMO_v17.0_Global.zip`.
 
 ### 🎯 Make it yours

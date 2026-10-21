@@ -123,7 +123,7 @@ Real battles and trades go through Azahar's own multiplayer room (UDP 24872). Ho
   `owner` field of their entry in the ranking file, or wait `ORAS_RANK_CLAIM_DAYS`.
 - 📄 Ranking files contain your players' nicknames and stats: don't publish them.
 - 📝 The server logs the IP addresses that connect (useful to spot abuse): keep the logs private.
-- 🧪 Tests: `python -m unittest test_server_ranking.py test_server_limits.py`.
+- 🧪 Tests: `python -m unittest test_server_ranking.py test_server_limits.py` and `python regression_server.py`.
 
 ---
 
@@ -220,4 +220,4 @@ Los combates e intercambios de verdad van por la sala multijugador de Azahar (UD
   quita el campo `owner` de su entrada en el archivo del ranking, o espera `ORAS_RANK_CLAIM_DAYS`.
 - 📄 Los archivos de ranking llevan los apodos y datos de tus jugadores: no los publiques.
 - 📝 El servidor apunta las IP que se conectan (sirve para detectar abusos): guarda el registro en privado.
-- 🧪 Pruebas: `python -m unittest test_server_ranking.py test_server_limits.py`.
+- 🧪 Pruebas: `python -m unittest test_server_ranking.py test_server_limits.py` y `python regression_server.py`.

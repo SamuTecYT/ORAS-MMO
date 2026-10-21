@@ -1,0 +1,16 @@
+# Every change needs the project owner's approval (GitHub asks for it automatically on each pull request).
+# Cada cambio necesita la aprobación del dueño del proyecto (GitHub la pide sola en cada pull request).
+*                                   @SamuTecYT
+
+# Most sensitive areas (same owner; listed so reviewers know where to look twice)
+# Zonas más delicadas (mismo dueño; están aquí para mirarlas dos veces)
+/.github/                           @SamuTecYT
+/tools/pr_guard.py                  @SamuTecYT
+/tools/privacy.py                   @SamuTecYT
+/packaging/                         @SamuTecYT
+/server/server.py                   @SamuTecYT
+/3ds_plugin/Includes/Protocol.hpp   @SamuTecYT
+/3ds_plugin/Sources/GameHook.cpp    @SamuTecYT
+/3ds_plugin/Sources/SkinTex.cpp     @SamuTecYT
+/3ds_plugin/Sources/GameLang.cpp    @SamuTecYT
+/3ds_plugin/Sources/DepthProbe.cpp  @SamuTecYT

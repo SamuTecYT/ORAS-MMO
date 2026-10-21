@@ -27,6 +27,8 @@ CFLAGS		:=	$(ARCH) -Os -mword-relocations \
 CFLAGS		+=	$(INCLUDE) -D__3DS__
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+# CI / developers: make EXTRA_CXXFLAGS="-Wall -Wextra -Wno-unused-parameter" (counts warnings)
+CXXFLAGS	+= $(EXTRA_CXXFLAGS)
 
 ASFLAGS		:=	$(ARCH)
 LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -Os -Wl,--gc-sections,--strip-discarded,--strip-debug
