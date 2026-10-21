@@ -101,7 +101,7 @@
 flowchart LR
     A["🎮 Tú<br/>juego + Azahar + plugin"] <-->|"posición, chat<br/>TCP 9000"| S[("🖥️ Servidor<br/>server.py")]
     S <-->|"posición, chat"| B["🎮 Tus amigos<br/>juego + Azahar + plugin"]
-    A -.-|"⚔️ combates e intercambios<br/>sala de Azahar · UDP 24872"| B
+    A -.-|"combates e intercambios<br/>sala de Azahar · UDP 24872"| B
 ```
 
 - El **plugin** (`OrasMmo.3gx`) funciona dentro del juego: lee dónde estás y dibuja a tus amigos, sus Pokémon y el
