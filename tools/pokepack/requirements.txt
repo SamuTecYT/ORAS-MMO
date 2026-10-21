@@ -1,0 +1,5 @@
+# python -m pip install -r requirements.txt
+# Tested with Python 3.14, moderngl 5.13, numpy 2.5, Pillow 12.3
+moderngl>=5.8
+numpy>=1.24
+Pillow>=9.1

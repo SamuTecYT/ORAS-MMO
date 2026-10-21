@@ -1,0 +1,37 @@
+# ORAS MMO — servidor con Docker Compose
+#   1. cp .env.example .env    (y edita .env: sobre todo AZAHAR_ROOM_PASSWORD)
+#   2. docker compose up -d                       -> solo el servidor del MMO (TCP 9000)
+#      docker compose --profile azahar-room up -d -> además la sala de Azahar para combates e intercambios (UDP 24872)
+# Abre en el firewall / panel del hosting los puertos que uses (9000/tcp y, si usas la sala, 24872/udp).
+
+services:
+  # Servidor del MMO: posiciones, chat, emotes, invitaciones y ranking
+  oras-mmo-relay:
+    build: .
+    container_name: oras-mmo-relay
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - ORAS_RANK_DIR=/data
+    ports:
+      - "${PORT:-9000}:${PORT:-9000}/tcp"
+    volumes:
+      - oras-rank:/data
+
+  # Opcional: sala de red de Azahar/Citra (combates e intercambios REALES del juego)
+  azahar-room:
+    profiles: ["azahar-room"]
+    image: k4rian/citra-room:latest
+    container_name: azahar-room
+    restart: unless-stopped
+    environment:
+      - CITRA_ROOM_NAME=${AZAHAR_ROOM_NAME:-Pokemon ORAS MMO}
+      - CITRA_ROOM_DESC=${AZAHAR_ROOM_DESC:-Combates e intercambios / Battles and trades}
+      - CITRA_ROOM_PORT=24872
+      - CITRA_ROOM_MAX_MEMBERS=${AZAHAR_ROOM_MAX_MEMBERS:-16}
+      - CITRA_ROOM_PASSWORD=${AZAHAR_ROOM_PASSWORD:?Pon AZAHAR_ROOM_PASSWORD en .env / set AZAHAR_ROOM_PASSWORD in .env}
+    ports:
+      - "24872:24872/udp"
+
+volumes:
+  oras-rank:

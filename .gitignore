@@ -3,13 +3,39 @@ Build/
 *.o
 *.elf
 *.d
+*.3gx
 *.pyc
 __pycache__/
+dist/
 
-# Local config and runtime text files
+# Configuración PRIVADA de cada compilación (tu servidor) — nunca al repositorio
+# PRIVATE per-build config (your server) — never committed
+3ds_plugin/Includes/ServerConfig.local.hpp
+# Patrones privados para tools/prepublish_check.py (tu IP, nombres...) / your private patterns
+.private_patterns.txt
+
+# Archivos del plugin al jugar / plugin runtime files
 mmo_ip.txt
 mmo_name.txt
 mmo_room.txt
+mmo_server.txt
+mmo_settings.txt
+mmo_log.txt
+mmo_dev_*
+
+# Servidor: ranking (apodos y datos de jugadores) y secretos / server ranking and secrets
+ranking_*.json
+ranking_*.json.tmp
+.env
+
+# Gráficos derivados del juego: nunca se publican / game-derived graphics: never published
+mmo_pokes_hd.bin
+mmo_pokes_3d.bin
+mmo_pokes_*.bin
+
+# Paquetes privados para tu grupo (ZIP con tu servidor) / private release packages for your group
+releases/
+*.zip
 
 # OS-specific files
 Thumbs.db

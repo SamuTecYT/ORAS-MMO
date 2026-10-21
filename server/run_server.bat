@@ -1,20 +1,19 @@
 @echo off
+chcp 65001 >nul
 setlocal EnableDelayedExpansion
-title Project ORAS MMO — Servidor v3
+title Pokemon ORAS MMO - Servidor / Server
 color 0A
 
 echo ============================================================
-echo    Project ORAS MMO  ^|  Servidor de Relé v3
+echo    Pokemon ORAS MMO  ^|  Servidor / Relay server
 echo ============================================================
 echo.
 
-:: ── Verificar Python ──────────────────────────────────────────
 python --version >nul 2>&1
 IF ERRORLEVEL 1 (
     color 0C
-    echo [ERROR] Python no encontrado.
-    echo Descargalo de: https://www.python.org/downloads/
-    echo Marca "Add Python to PATH" al instalar.
+    echo [ERROR] Python no encontrado / Python not found.
+    echo         https://www.python.org/downloads/  ^("Add Python to PATH"^)
     echo.
     pause & exit /b 1
 )
@@ -22,32 +21,28 @@ FOR /F "tokens=*" %%v IN ('python --version 2^>^&1') DO SET PYVER=%%v
 echo [OK] %PYVER%
 echo.
 
-:: ── Mostrar IPs disponibles ──────────────────────────────────
-echo [INFO] IP Local (para amigos en la MISMA red Wi-Fi):
-echo.
+if "%PORT%"=="" set "PORT=9000"
+echo [INFO] IP local de este PC / This PC's local IP (same Wi-Fi):
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4" ^| findstr /v "127.0.0.1"') do (
     set "IP=%%a"
     set "IP=!IP: =!"
     echo         !IP!
 )
 echo.
-echo [INFO] Para jugar por INTERNET con amigos a distancia (ZeroTier):
-echo        - Instala y abre ZeroTier One (incluido en el paquete).
-echo        - Conectate a tu red de ZeroTier.
-echo        - Tu "Managed IP" de ZeroTier (ej. 10.147.x.x o 192.168.19x.x) es la que
-echo          debes dar a tus amigos para que la ingresen en el juego (SELECT -^> Cambiar IP).
+echo [INFO] Jugadores en este mismo PC / Players on this same PC: 127.0.0.1 (por defecto / default)
+echo [INFO] Amigos lejos / Friends far away: ZeroTier o/or Tailscale ^(da tu IP de esa red / give your IP on that
+echo        network^), abre el TCP %PORT% en tu router / open TCP %PORT% on your router, o/or un VPS.
+echo        Guia / Guide: README ^> "Jugar por Internet sin servidor contratado".
+echo [INFO] Cada jugador: mmo_server.txt = "IP" o "IP:puerto" / Each player: mmo_server.txt = "IP" or "IP:port"
 echo.
-
-:: ── Iniciar servidor ─────────────────────────────────────────
-echo [INFO] Puerto: 9000
-echo [INFO] Esperando jugadores... (Ctrl+C para apagar)
+echo [INFO] Puerto / Port: %PORT%   ^(Ctrl+C para apagar / to stop^)
 echo.
-python server.py
+python "%~dp0server.py"
 
 IF ERRORLEVEL 1 (
     color 0C
     echo.
-    echo [ERROR] El servidor se cerró inesperadamente.
+    echo [ERROR] El servidor se cerro / The server stopped unexpectedly.
 )
 pause
 endlocal

@@ -1,0 +1,4 @@
+# Lo que genera esta herramienta son gráficos del juego: nunca al repositorio
+# What this tool makes is game graphics: never commit it
+*.bin
+*.png

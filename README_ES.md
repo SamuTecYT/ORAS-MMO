@@ -1,135 +1,318 @@
-# 🌟 Pokémon ORAS MMO — v12.6 (Edición Definitiva)
-
 <p align="center">
-  <b>Multijugador en Tiempo Real para Pokémon Rubí Omega y Zafiro Alfa — PC y Android</b><br>
-  <i>Juega con amigos en la región de Hoenn a 60 FPS. Crossplay total entre PC (Windows) y Android.</i>
+  <img src="docs/banner.png" alt="Pokémon ORAS MMO" width="750"/>
 </p>
 
----
+<h1 align="center">Pokémon ORAS MMO</h1>
 
-## 🎯 ¿Qué es este Proyecto?
+<p align="center">
+  <b>Juega Pokémon Rubí Omega / Zafiro Alfa con tus amigos: los ves caminar en tu propio mundo, en tiempo real.</b><br/>
+  Un plugin 3GX para el emulador <a href="https://azahar-emu.org">Azahar</a> (PC y Android) + un servidor pequeño y libre que montas tú.
+</p>
 
-**Pokémon ORAS MMO** convierte el clásico juego de Nintendo 3DS **Pokémon Rubí Omega y Zafiro Alfa** en un juego multijugador masivo en tiempo real. Usando un plugin personalizado para emuladores (`.3gx`) y un servidor de relé TCP, puedes ver a tus amigos caminando por el mapa de Hoenn a tu lado, con crossplay completo entre PC y Android.
+<p align="center">
+  <img src="https://img.shields.io/badge/versi%C3%B3n-17.0-blue" alt="versión 17.0"/>
+  <img src="https://img.shields.io/badge/plataforma-Azahar%20PC%20%7C%20Android-green" alt="Azahar PC y Android"/>
+  <img src="https://img.shields.io/badge/servidor-Python%203.8%2B-yellow" alt="Python 3.8+"/>
+  <img src="https://img.shields.io/badge/licencia-MIT-lightgrey" alt="MIT"/>
+</p>
 
-> **Idioma:** Lee esta guía en inglés en [`README.md`](README.md).
-
----
-
-## ✨ Características Principales
-
-* 🏃 **Avatares en tiempo real:** Verás a tus amigos caminando, corriendo y usando la bici en el mundo a 60 FPS.
-* 🗺️ **Radar AreaNav de Hoenn:** Abre el mapa en la pantalla táctil inferior y ve exactamente en qué pueblo, ciudad o ruta está cada amigo.
-* 💬 **Chat y Emoticonos:** Escribe mensajes personalizados con el teclado o envía emotes flotantes.
-* ⚔️ **Combates e Intercambios Oficiales:** Compatible con el PSS nativo de Pokémon (Combate, Intercambio).
-* 📱 **Crossplay PC ↔ Android:** Jugadores en Windows y Android comparten la misma sala sin problema.
-* 🔒 **100% Seguro:** Cero escrituras en la RAM del juego. No modifica tu partida guardada.
-* 🌐 **ZeroTier integrado:** Juega con amigos de cualquier parte del mundo sin abrir puertos.
+<p align="center"><a href="README.md">🇬🇧 Read in English</a></p>
 
 ---
 
-## 📦 Estructura del Repositorio
+## Índice
+
+1. [Qué hace](#qué-hace)
+2. [Cómo funciona](#cómo-funciona)
+3. [Empezar a jugar](#empezar-a-jugar)
+4. [El menú SELECT](#el-menú-select)
+5. [Monta tu propio servidor](#monta-tu-propio-servidor)
+6. [Jugar por Internet sin servidor contratado](#jugar-por-internet-sin-servidor-contratado) (ZeroTier, Tailscale, Radmin, router)
+7. [Archivos de configuración](#archivos-de-configuración)
+8. [Si algo falla](#si-algo-falla)
+9. [Compilar el plugin](#compilar-el-plugin)
+10. [Hazlo tuyo (programadores)](#hazlo-tuyo-programadores): ver también [CONTRIBUTING](CONTRIBUTING.md) y [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+11. [Seguridad y privacidad](#seguridad-y-privacidad)
+12. [Preguntas frecuentes](#preguntas-frecuentes)
+13. [Estructura del proyecto](#estructura-del-proyecto)
+14. [Aviso legal](#aviso-legal)
+
+---
+
+## Qué hace
+
+- **Tus amigos dentro de tu juego**: hasta 12 por sala. Cada uno aparece en tu mapa con el **modelo 3D real del
+  entrenador** (Bruno / Aura), andando, corriendo o en bici (Mach o Acro), con movimiento suave aunque su conexión
+  vaya mal (colchón y predicción por jugador).
+- **Pokémon acompañantes en 3D**: tu primer Pokémon (y el de tus amigos) sigue a su entrenador, dibujado a partir del
+  modelo 3D del propio juego, en 8 direcciones y con su paso real. Solo pisa tus huellas o suelo libre, así que no
+  atraviesa casas, setos ni árboles, y los edificios lo tapan bien cuando pasa por detrás.
+  *(Necesita el paquete opcional `mmo_pokes_3d.bin`, ver [preguntas](#preguntas-frecuentes).)*
+- **Mapas del propio juego**: tus amigos salen como pines en el **AreaNav** y en el **mapa de Vuelo**, en su sitio exacto.
+- **Menú SELECT** (ratón, pantalla táctil o botones): jugadores conectados, chat con mensajes rápidos y susurros,
+  emotes (`!`, feliz, corazón, risa...), invitaciones a combatir o intercambiar, tu personaje (16 colores de ropa +
+  color del gorro o lazo, color de la placa del nombre), pantalla, conexión y ayuda.
+- **Ranking de la sala que se guarda**: medallas, Liga, Pokédex y equipo, guardado por el servidor (también de quien
+  está desconectado).
+- **Combates e intercambios reales**: la invitación sale del menú del MMO y se juega por la sala de red de Azahar (PSS).
+- **7 idiomas** para el menú del MMO **y para el juego entero**: español, inglés, francés, italiano, alemán, japonés
+  (kana o kanji) y coreano. Por defecto, el de tu partida; se cambia en SELECT → Pantalla → Idioma. Los nombres
+  oficiales de Pokémon y lugares salen de tu propio juego; japonés y coreano usan la letra del juego.
+- **Juego cruzado**: Azahar en Windows/Linux/macOS y Azahar en Android juegan en las mismas salas.
+- **Tu partida nunca se modifica.** El plugin lee la memoria del juego y solo escribe lo visual que necesita (el color
+  de tu ropa, los modelos de tus amigos, ocultar el icono de cabeza del mapa, el idioma del juego al arrancar).
+
+## Cómo funciona
 
 ```
-ORAS-MMO/
-├── 3ds_plugin/          # Código fuente C++ del plugin ARM11 3GX
-├── server/              # Servidor TCP de relé en Python 3
-├── ZeroTier/            # Instalador oficial de ZeroTier One
-├── docs/                # Guías detalladas en Español e Inglés
-│   ├── GUIA_PC_ES.md        ← Guía completa para PC
-│   ├── GUIA_ANDROID_ES.md   ← Guía completa para Android
-│   ├── GUIA_SERVIDOR_ES.md  ← Guía para el servidor
-│   ├── GUIDE_PC.md          ← PC guide (English)
-│   └── GUIDE_ANDROID.md     ← Android guide (English)
-├── releases/            # Archivos 3GX precompilados listos para usar
-│   ├── PC/              # Plugin para PC (plugin.3gx, OrasMmo.3gx, INSTALAR_PC.bat)
-│   └── Android/         # Plugin para Android (default.3gx)
-├── README.md            # Documentación principal en Inglés
-└── README_ES.md         # Este archivo — Documentación en Español
+ Azahar (PC / Android)                                          Tu servidor (PC, VPS, Docker...)
+┌──────────────────────────────────────────┐   TCP, paquetes   ┌─────────────────────────────────┐
+│ Pokémon Rubí Omega / Zafiro Alfa         │   de 64 bytes     │ server/server.py (Python 3.8+,  │
+│  └─ OrasMmo.3gx (CTRPluginFramework)     │ ◄───────────────► │ sin dependencias)               │
+│     · lee tu posición, mapa y cámara     │   código de sala  │  · salas de hasta 12 jugadores  │
+│     · dibuja amigos, Pokémon y menús     │   + datos         │  · reenvía posiciones, chat...  │
+│     · guarda mmo_*.txt a su lado         │                   │  · guarda el ranking de la sala │
+└──────────────────────────────────────────┘                   └─────────────────────────────────┘
+          │  (opcional) sala de red de Azahar, UDP 24872 — combates e intercambios reales (PSS)
 ```
 
----
+El servidor solo **reenvía**: nunca ve tu partida, solo lo que manda el plugin (apodo, modelo, posición, chat,
+emotes y datos del ranking). Cualquiera puede montar uno; no hay servidor central.
 
-## ⚡ Inicio Rápido
+## Empezar a jugar
 
-### Paso 0 — El Anfitrión Inicia el Servidor
-1. Descarga o clona este repositorio.
-2. Abre la carpeta **`server/`** y haz doble clic en **`run_server.bat`**.
-3. Deja esa ventana abierta mientras juegan.
-4. Comparte tu IP (local o ZeroTier Managed IP) con todos los jugadores.
+Necesitas: **[Azahar](https://azahar-emu.org)** (la última versión), **tu propia copia legal** de Pokémon Rubí Omega
+(`000400000011C400`) o Zafiro Alfa (`000400000011C500`) ya funcionando en Azahar (en la web de Azahar se explica cómo
+volcar tu propio juego) y la dirección de un servidor (tuyo o de un amigo).
 
-### Para Jugar por Internet — ZeroTier (Gratis)
-Si no están en la misma casa:
-1. Abre la carpeta **`ZeroTier/`** y ejecuta **`Instalar_ZeroTier.bat`** (o doble clic en `ZeroTier One.msi`).
-2. El anfitrión crea una red en [my.zerotier.com](https://my.zerotier.com) y comparte el **Network ID** (16 dígitos).
-3. Todos los demás abren ZeroTier → clic derecho en el ícono del reloj → **Join New Network...** → pegan el código.
-4. El anfitrión autoriza a cada miembro marcando la casilla **"Auth"** en el panel web.
-5. La **"Managed IP"** del anfitrión (ej. `10.147.19.45`) es la IP que todos escribirán en el juego.
+### PC (Windows)
+1. Descarga `ORAS_MMO_v17.0_Global.zip` de [Releases](../../releases) y extráelo.
+2. Doble clic en **`INSTALL_PC.bat`**. Busca Azahar, instala el plugin para los dos juegos y te pide la dirección del
+   servidor (`IP` o `IP:puerto`; vacío = `127.0.0.1`, un servidor en el mismo PC).
+3. En Azahar: **Emulación → Configurar → Sistema** (o **Depuración**) → activa el **cargador de plugins 3GX** (una vez).
+4. Abre el juego y carga tu partida. Pulsa **SELECT** para abrir el menú del MMO.
 
----
+### PC (Linux / macOS) e instalación a mano
+Abre la carpeta de usuario de Azahar (**Archivo → Abrir carpeta de Azahar**; normalmente `%APPDATA%\Azahar` en Windows,
+`~/.local/share/azahar-emu` en Linux y `~/Library/Application Support/Azahar` en macOS).
+Copia `OrasMmo.3gx` en `<carpeta de usuario de Azahar>/sdmc/luma/plugins/000400000011C400/` (Rubí Omega) y/o
+`.../000400000011C500/` (Zafiro Alfa). Para elegir servidor, crea `mmo_server.txt` en esa misma carpeta con la IP
+(por ejemplo `203.0.113.10` o `203.0.113.10:9000`).
 
-### 💻 Instalación en PC (Windows)
+### Android
+1. Con un explorador de archivos, abre la carpeta de datos de Azahar → `sdmc/luma/plugins/` (crea `luma` y `plugins`
+   si no existen).
+2. Copia ahí `OrasMmo.3gx` **con el nombre `default.3gx`**, y un `mmo_server.txt` con la IP de tu servidor.
+3. Azahar → Ajustes → Sistema: activa el **cargador de plugins 3GX**; Gráficos: **OpenGL ES**.
+4. Abre el juego; toca **SELECT** para abrir el menú (la pantalla de abajo es táctil).
 
-**Opción A — Automática (1 clic):**
-1. Ve a `releases/PC/` y haz doble clic en **`INSTALAR_PC.bat`**.
-2. El script detecta Azahar automáticamente e instala el plugin.
+### Jugar juntos
+- Todos usan el **mismo servidor** y el **mismo código de sala** (SELECT → Conexión; por defecto `1234`).
+  Usa un código propio y difícil de adivinar: es lo único que deja fuera de tu sala a desconocidos.
+- ¿Sin servidor? Uno de vosotros puede montarlo en casa: mira
+  [Jugar por Internet sin servidor contratado](#jugar-por-internet-sin-servidor-contratado).
+- **Combates e intercambios**: manda la invitación desde SELECT → Combates; después los dos entráis en la misma sala de
+  Azahar (**Multijugador → Conectarse directamente**) y abrís el **PSS** en la pantalla táctil.
 
-**Opción B — Manual:**
-1. Copia `releases/PC/plugin.3gx`.
-2. Pégalo en tu carpeta de Azahar:
-   - Rubí Omega: `%APPDATA%\Azahar\sdmc\luma\plugins\000400000011C400\plugin.3gx`
-   - Zafiro Alfa: `%APPDATA%\Azahar\sdmc\luma\plugins\000400000011C500\plugin.3gx`
-3. Abre Azahar → **Emulación → Configurar → Depuración** → activa **"Enable Plugin Loader"**.
+## El menú SELECT
 
-👉 **Guía completa:** [`docs/GUIA_PC_ES.md`](docs/GUIA_PC_ES.md)
+Pulsa **SELECT** en el juego (en Android, el botón SELECT de la pantalla). Funciona con ratón, pantalla táctil o botones.
 
----
+| Sección | Qué haces ahí |
+|---|---|
+| **Inicio** | Estado de la conexión, tu sala, dónde estás; atajos: ver quién juega, saludar a todos, enviar un mensaje, invitar, cambiar tus colores |
+| **Jugadores** | Todos los de tu sala y dónde está cada uno; elige a alguien para susurrarle o invitarle |
+| **Ranking** | La tabla de la sala: medallas, Liga, Pokédex, equipo (también de los desconectados) |
+| **Chat y emotes** | Mensajes rápidos, texto libre, susurros y emotes (`!`, feliz, corazón, risa...) |
+| **Combates** | Invitar a combatir o intercambiar; ver en directo el combate de un amigo |
+| **Mi personaje** | Color de la ropa (16), color del gorro o lazo, color de la placa del nombre, vista previa |
+| **Pantalla** | Recuadro de estado, nombres, acompañantes (todos / el mío / ninguno), rendimiento (auto / calidad / ahorro), **idioma** |
+| **Conexión** | Tu nombre, código de sala, servidor, reconectar |
+| **Ayuda** | Guías cortas dentro del juego |
 
-### 📱 Instalación en Android
+## Monta tu propio servidor
 
-1. Copia `releases/Android/default.3gx`.
-2. Pégalo en tu emulador:
-   - Ruta típica: `Azahar/sdmc/luma/plugins/default.3gx`
-   - Android 11+: `Android/data/org.citra.azahar/files/sdmc/luma/plugins/default.3gx`
-3. En los ajustes de Azahar:
-   - **Sistema:** Activa *"Habilitar cargador de plugins 3GX"*.
-   - **Gráficos:** Selecciona **OpenGL ES** (¡nunca Vulkan!).
+Guía completa: **[server/README.md](server/README.md)** (Windows, VPS con Linux, Docker, systemd, firewall, límites).
 
-👉 **Guía completa:** [`docs/GUIA_ANDROID_ES.md`](docs/GUIA_ANDROID_ES.md)
+```bash
+cd server
+python3 server.py                 # escucha en TCP 9000, sin dependencias
+PORT=9100 python3 server.py       # otro puerto (jugadores: mmo_server.txt = "IP:9100")
+docker compose up -d              # o con Docker (antes copia .env.example como .env)
+```
 
----
+Abre el **TCP 9000** (y el **UDP 24872** si también montas la sala de Azahar) en tu router o en el panel del hosting.
 
-### 🕹️ Configurar y Calibrar Dentro del Juego (PC y Android)
+## Jugar por Internet sin servidor contratado
 
-1. Carga tu partida en el exterior (cualquier pueblo o ruta).
-2. El recuadro `MMO [SALA] Jugador` aparece en la esquina superior izquierda (rojo = sin conexión, verde = conectado).
-3. Presiona **SELECT** y configura:
-   - **Configuración de Red y Perfil → Cambiar IP del Servidor:** Pon la IP del anfitrión.
-   - **Configuración de Red y Perfil → Cambiar Codigo de Sala:** Todos deben tener el mismo código (ej. `1234`).
-   - **Configuración de Red y Perfil → Configurar mi Nombre:** Tu apodo en el juego.
-4. **Calibración (3 segundos, obligatoria):**
-   - Entra en **Calibración y Ajustes Visuales**.
-   - Quédate quieto y pulsa **`1. [PASO 1] Registrar Posicion Inicial`**.
-   - Camina 3 pasos y pulsa **`2. [PASO 2] Confirmar Movimiento`**.
-5. Presiona **B** para salir. ¡El recuadro se pondrá verde y verás a tus amigos!
+No hace falta un VPS. Un jugador (el **anfitrión**) abre el servidor en su propio PC, y sus amigos de cualquier parte
+del mundo llegan a ese PC con una **red virtual** gratuita (ZeroTier, Tailscale, Radmin VPN...) o abriendo un puerto del
+router. El PC del anfitrión tiene que estar encendido mientras jugáis.
 
----
+### 1. El anfitrión abre el servidor
+1. Instala [Python 3](https://www.python.org/downloads/) (en Windows marca **"Add Python to PATH"**).
+2. Doble clic en `server/run_server.bat` (Linux/macOS: `python3 server/server.py`). Deja la ventana abierta.
+3. Windows pregunta si deja pasar a Python por el firewall: permítelo en **redes privadas y públicas** (las redes
+   virtuales suelen salir como "públicas"). O crea tú la regla, en una terminal abierta como administrador:
+   ```bat
+   netsh advfirewall firewall add rule name="ORAS MMO" dir=in action=allow protocol=TCP localport=9000
+   ```
+4. El anfitrión juega en ese mismo PC con el servidor por defecto `127.0.0.1` (no tiene que cambiar nada).
 
-## 🛠️ Solución de Problemas
+### 2. Conecta a tus amigos (elige una opción)
 
-| Problema | Solución |
-|:---|:---|
-| El recuadro queda en **rojo** | Verifica que `run_server.bat` esté abierto y que la IP sea correcta. |
-| **No veo a mis amigos** | Asegúrate de que ambos hayan completado el Paso 1 y Paso 2 de calibración. |
-| **Android: el juego se cierra** | Cambia el API de gráficos a **OpenGL ES** (nunca Vulkan). |
-| **Python no reconocido** | Reinstala Python 3 marcando "Add to PATH" durante la instalación. |
-| **ERROR:ROOM_FULL** | Cambia el código de sala a otro valor (SELECT → Cambiar Código de Sala). |
+**ZeroTier** (gratis; Windows, macOS, Linux y **Android**). Es lo que usaba este proyecto antes de tener un VPS:
+1. El anfitrión crea una cuenta en [my.zerotier.com](https://my.zerotier.com), pulsa **Create A Network** y copia el
+   **Network ID** (16 caracteres). Deja **Access Control** en **Private**.
+2. Todos (también el anfitrión) instaláis [ZeroTier One](https://www.zerotier.com/download/) y os **unís** a ese Network
+   ID (Windows: icono junto al reloj → *Join New Network*; Android: **+**).
+3. En la página de la red, en **Members**, el anfitrión marca **Auth** para cada amigo. Solo gente que conozcas.
+4. La **Managed IP** del anfitrión en esa lista (por ejemplo `10.147.17.5`) es la dirección del servidor para los demás.
 
----
+**Tailscale** (gratis para uso personal; Windows, macOS, Linux y **Android**):
+1. Todos instaláis [Tailscale](https://tailscale.com/download) e iniciáis sesión.
+2. El anfitrión comparte su PC con cada amigo (consola de administración → su equipo → **Share**) o los invita a su red.
+3. La **IP de Tailscale** del anfitrión (`100.x.y.z`, sale en la app) es la dirección del servidor.
 
-## 📜 Créditos y Aviso Legal
+**Radmin VPN** (gratis, sin cuenta, **solo Windows**, no sirve para Android): el anfitrión crea una red con nombre y
+contraseña, los amigos se unen, y la IP `26.x.x.x` del anfitrión es la dirección del servidor.
 
-* **Desarrollador Principal:** [SamuTecYT](https://github.com/SamuTecYT)
-* **Framework:** [CTRPluginFramework](https://github.com/PabloMK7/CTRPluginFramework) por PabloMK7 y Nanquitas.
-* **Agradecimientos:** A la comunidad de ingeniería inversa del 3DS y emulación de Pokémon.
+**Abrir un puerto del router** (sin programas extra): en el router del anfitrión, redirige el **TCP 9000** a la IP
+local de su PC y da a tus amigos tu **IP pública** (busca "cuál es mi IP"). Inconvenientes: tus amigos conocen la IP de
+tu casa, puede cambiar, y no funciona si tu compañía usa CGNAT. En ese caso, usa una red virtual.
 
-*Pokémon*, *Pokémon Rubí Omega* y *Pokémon Zafiro Alfa* son marcas registradas de Nintendo, Creatures Inc. y GAME FREAK Inc. Este proyecto es un mod de fan sin fines de lucro. No incluye ROMs ni activos propietarios. Los usuarios deben aportar su propia copia legal del juego.
+### 3. Cada amigo pone la dirección del anfitrión
+SELECT → **Conexión → Servidor** → escribe la IP del anfitrión (la de la red virtual o la pública), o ponla en
+`mmo_server.txt` junto al plugin (en Windows, `INSTALL_PC.bat` te la pide). Todos con el **mismo código de sala**.
+
+### 4. Combates e intercambios (opcional)
+El anfitrión abre una sala de Azahar: **Multijugador → Crear sala** (puerto **24872**, con contraseña). Los amigos
+entran por **Multijugador → Conectarse directamente** con la misma IP del anfitrión y el puerto 24872. Si usáis un
+puerto del router en vez de una red virtual, redirige también el **UDP 24872**. Regla del firewall de Windows:
+`netsh advfirewall firewall add rule name="Sala Azahar" dir=in action=allow protocol=UDP localport=24872`
+
+**Si alguien no puede entrar:** la ventana del servidor muestra una línea por cada jugador que se conecta. Revisa:
+- la regla del firewall;
+- que ZeroTier/Tailscale diga *conectado* en los dos lados (y que el amigo esté autorizado);
+- la IP;
+- el código de sala.
+
+Las redes virtuales cifran lo que viaja entre vosotros; mete en la tuya solo a gente de confianza.
+
+## Archivos de configuración
+
+Todos van junto al plugin (`sdmc/luma/plugins/<TitleID>/`, o `plugins/` en Android):
+
+| Archivo | Qué es | Ejemplo |
+|---|---|---|
+| `mmo_server.txt` | Servidor: IPv4 y, si hace falta, `:puerto` (sin nombres de dominio) | `203.0.113.10:9000` |
+| `mmo_room.txt` | Código de sala (1–16 caracteres) | `MiGrupo2026` |
+| `mmo_name.txt` | Tu apodo (hasta 13 caracteres) | `Ash` |
+| `mmo_settings.txt` | Todo lo que eliges en el menú SELECT | lo escribe el plugin |
+| `mmo_pokes_3d.bin` | Paquete de Pokémon acompañantes 3D (opcional) | ver [preguntas](#preguntas-frecuentes) |
+| `mmo_log.txt` | Registro: adjúntalo cuando informes de un fallo | lo escribe el plugin |
+
+Casi nadie necesita tocarlos: el menú SELECT los cambia por ti.
+
+## Si algo falla
+
+| Problema | Prueba esto |
+|---|---|
+| Pulso SELECT y no pasa nada | Activa el cargador de plugins 3GX de Azahar; comprueba que el plugin está en `sdmc/luma/plugins/000400000011C400/` (Rubí Omega) o `.../000400000011C500/` (Zafiro Alfa), o `plugins/default.3gx` en Android; reinicia el juego |
+| No veo a mis amigos | Todos con el **mismo servidor y el mismo código de sala**; la ventana del servidor tiene que estar abierta; SELECT → Conexión → Reconectar; revisa el firewall del anfitrión |
+| El menú dice "Desconectado" | IP o puerto mal escritos, el servidor está apagado o un firewall bloquea el TCP 9000 |
+| El juego va lento | SELECT → Pantalla → Rendimiento → **Ahorro**; en Android usa **OpenGL ES** |
+| No nos sigue ningún Pokémon | Hace falta `mmo_pokes_3d.bin` (ver preguntas frecuentes) |
+| Quiero avisar de un fallo | Adjunta `mmo_log.txt` (junto al plugin); antes borra la IP de tu servidor y tu código de sala |
+
+## Compilar el plugin
+
+Requisitos ([devkitPro](https://devkitpro.org/wiki/Getting_Started)): **devkitARM** (r68), **libctru** (2.7),
+**libctrpf** 0.8 (CTRPluginFramework) y **3gxtool** 1.3. libctrpf y 3gxtool vienen del
+[repositorio de paquetes de ThePixellizerOSS](https://thepixellizeross.gitlab.io/packages/).
+
+```bash
+cd 3ds_plugin
+make                      # -> 3ds_plugin.3gx  (renómbralo a OrasMmo.3gx)
+```
+
+- **Windows**: el `make` de devkitPro falla con espacios en la ruta; compila desde una carpeta como `C:\dev\ORAS-MMO`.
+- Opciones: `-Os -std=gnu++11 -fno-rtti -fno-exceptions`; memoria del plugin `10MiB` (`CTRPluginFramework.plgInfo`).
+- Los textos están en **`3ds_plugin/tools/i18n/strings.py`**; después de editarlos, ejecuta
+  `python 3ds_plugin/tools/i18n/gen_lang.py` (regenera `Includes/LangTable.inc` y comprueba los `%s`/`%d`).
+- Pruebas del servidor: `python -m unittest server/test_server_ranking.py server/test_server_limits.py`.
+- ZIP para publicar: `python tools/package_public.py ruta/a/OrasMmo.3gx` → `dist/ORAS_MMO_v17.0_Global.zip`.
+
+## Hazlo tuyo (programadores)
+
+- **Servidor por defecto para tu comunidad**: copia `3ds_plugin/Includes/ServerConfig.example.hpp` como
+  `ServerConfig.local.hpp` y pon tu IP, puerto y sala. Ese archivo está en **.gitignore**: tu compilación se conecta
+  sola y tu dirección nunca acaba en un repositorio público. Sin él, el plugin usa `127.0.0.1:9000` y la sala `1234`.
+- **Servidor privado**: `ORAS_ROOMS=MiSala,OtraSala` hace que el servidor acepte solo esas salas.
+- Los comentarios del código citan `KB §x.y`: son las notas de ingeniería inversa del proyecto (direcciones y
+  estructuras del juego), que no forman parte de este repositorio. Los valores en sí están en el código.
+- **Protocolo de red**: paquetes de 64 bytes, explicados en **[docs/PROTOCOL.md](docs/PROTOCOL.md)**, para escribir
+  tu propio servidor o herramientas.
+- **Antes de publicar tu versión**: `python tools/prepublish_check.py` revisa lo que git publicaría buscando tus datos
+  privados (IP, nombres, contraseñas que pones en un `.private_patterns.txt` ignorado por git) y archivos que nunca se
+  comparten (`mmo_pokes_*.bin`, ZIP, rankings, `.env`).
+
+## Seguridad y privacidad
+
+- **Sin cuentas, sin contraseñas y sin telemetría.** El plugin solo habla con el servidor que configures.
+- Lo que recibe el servidor: apodo, modelo, posición y mapa, chat y emotes, invitaciones y datos del ranking (medallas,
+  Pokédex, tiempo de juego, niveles del equipo). También ve tu dirección IP, como cualquier servidor de juego.
+- El servidor comprueba el código de sala, sustituye el número de jugador del que envía (nadie ocupa el sitio de otro),
+  limita la cola de cada cliente y pone límites de conexiones (en total, por IP, de salas y de archivos de ranking).
+  Los archivos del ranking se nombran con el código de sala en hexadecimal: una sala nunca puede escribir fuera de la
+  carpeta del servidor.
+- Cada jugador puede mandar como mucho 120 paquetes por segundo (el plugin manda unos 30); si alguien inunda la sala,
+  lo que sobra se descarta y no llega a nadie.
+- El plugin comprueba todo lo que recibe (números de jugador; los textos siempre se cortan y se terminan) y todo
+  archivo que lee (`mmo_*.txt`, el paquete de acompañantes).
+- **No hay autenticación**: quien conozca la dirección del servidor y el código de sala puede entrar en esa sala con
+  cualquier apodo. Usa un código de sala propio (o `ORAS_ROOMS`) y compártelo solo con gente de confianza.
+- ¿Has encontrado una vulnerabilidad? Abre un
+  [aviso de seguridad privado](../../security/advisories/new) en lugar de un issue público.
+
+## Preguntas frecuentes
+
+**No salen los Pokémon acompañantes.** Necesitan `mmo_pokes_3d.bin`, un paquete dibujado a partir de los modelos 3D
+del propio juego. No se reparte aquí (son gráficos del juego). Sin él funciona todo lo demás; solo no se dibujan.
+Puedes crearlo tú desde tu propia copia del juego con [`tools/pokepack`](tools/pokepack/README_ES.md).
+
+**¿Japonés o coreano?** Elígelo en SELECT → Pantalla → Idioma. El menú del MMO cambia al momento; los textos del juego,
+al reiniciar el juego. Tu partida no se toca.
+
+**¿"Servidor: Automático" en el menú?** Es el servidor que trae el plugin compilado (`127.0.0.1` en la versión
+pública). Pon el tuyo en SELECT → Conexión o con `mmo_server.txt`.
+
+**¿En una 3DS real?** Está hecho y probado en Azahar. En una consola con el cargador de plugins de Luma3DS podría
+funcionar, pero no está probado.
+
+**¿Otra versión del juego?** El plugin comprueba la versión del juego al arrancar. Si no coincide, desactiva lo que toca
+la memoria del juego en lugar de colgarse.
+
+## Estructura del proyecto
+
+```
+3ds_plugin/            El plugin 3GX (C++ / CTRPluginFramework)
+  Sources/, Includes/  Lectura del juego, dibujo, menú, red, idiomas
+  tools/i18n/          Traducciones (strings.py) y generador de la tabla
+server/                Servidor (server.py), pruebas, Docker y guía para montarlo
+packaging/             Lo que va dentro del ZIP (instalador, guía rápida)
+extras/shaders/        Shader opcional de post-procesado para Azahar (OpenGL)
+tools/                 package_public.py (ZIP para publicar), prepublish_check.py, fake_players.py (bots de prueba)
+  pokepack/            Crea el paquete de Pokémon acompañantes desde tu propio juego
+docs/                  ARCHITECTURE.md (guía para programadores), PROTOCOL.md, banner
+CONTRIBUTING.md        Cómo contribuir · SECURITY.md: cómo avisar de vulnerabilidades
+```
+
+## Aviso legal
+
+Pokémon ORAS MMO es un proyecto de fans sin ánimo de lucro, sin relación con Nintendo, Creatures Inc. ni GAME FREAK inc.
+Pokémon y los nombres relacionados son marcas de sus respectivos dueños. Este repositorio **no contiene ROMs, ni código
+ni gráficos del juego**: los nombres, letras, modelos y texturas se leen al jugar desde **tu propia copia** del juego.
+Úsalo solo con juegos que tengas legalmente.
+
+Código con [licencia MIT](LICENSE). Creado por [SamuTecYT](https://github.com/SamuTecYT) y colaboradores.

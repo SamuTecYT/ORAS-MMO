@@ -45,8 +45,8 @@ body:
     id: plugin_version
     attributes:
       label: Versión del Plugin MMO / Plugin Version
-      description: Versión del plugin (ej. v12.6)
-      placeholder: "v12.6"
+      description: Versión del plugin (SELECT → Ayuda; ej. 17.0)
+      placeholder: "17.0"
     validations:
       required: true
   - type: textarea
@@ -74,5 +74,15 @@ body:
       label: Comportamiento Esperado / Expected Behavior
       description: ¿Qué debería haber ocurrido normalmente?
       placeholder: "El personaje debería..."
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Registro / Log (mmo_log.txt)
+      description: |
+        Pega las últimas líneas de `mmo_log.txt` (está junto al plugin). ⚠️ Antes de publicarlo, borra la IP de tu servidor y tu código de sala (líneas "Conectado a ...").
+        Paste the last lines of `mmo_log.txt` (next to the plugin). ⚠️ Remove your server IP and room code first ("Conectado a ..." lines).
+      render: text
     validations:
       required: false
