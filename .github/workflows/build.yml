@@ -1,55 +1,55 @@
-name: Build ORAS MMO 3gx
+name: Build plugin and test server
 
+# Solo a mano (pestaña Actions -> Run workflow). Compila la versión PÚBLICA (sin ServerConfig.local.hpp: servidor
+# 127.0.0.1) y pasa las pruebas del servidor. No publica nada: el .3gx queda como artefacto de la ejecución.
+# Manual only. Builds the PUBLIC plugin (no ServerConfig.local.hpp) and runs the server tests. Publishes nothing.
 on:
-  push:
-    paths:
-      - 'android_mod/**'
-      - '.github/workflows/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  server-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest server/test_server_ranking.py server/test_server_limits.py -v
+
+  plugin:
     runs-on: ubuntu-latest
     container:
       image: devkitpro/devkitarm:latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install official libctrpf and 3gxtool
+      # libctrpf and the Linux 3gxtool come from the CTRPF package repo (thepixellizeross). The repos go into the
+      # config file dkp-pacman really reads, which is not always /etc/pacman.conf inside this image.
+      - name: Install libctrpf and 3gxtool
         run: |
-          echo -e "\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional" >> /etc/pacman.conf
-          echo -e "\n[thepixellizeross-win]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/win\nSigLevel = Optional" >> /etc/pacman.conf
-          # Using dkp-pacman inside the devkitpro container
+          CONF=$(dkp-pacman -v -Q 2>/dev/null | sed -n 's/^Conf File *: *//p' | head -n 1)
+          [ -n "$CONF" ] || CONF=/opt/devkitpro/pacman/etc/pacman.conf
+          echo "dkp-pacman config: $CONF"
+          printf '\n[thepixellizeross-lib]\nServer = https://thepixellizeross.gitlab.io/packages/any\nSigLevel = Optional\n' >> "$CONF"
+          printf '\n[thepixellizeross-linux]\nServer = https://thepixellizeross.gitlab.io/packages/x86_64/linux\nSigLevel = Optional\n' >> "$CONF"
           dkp-pacman -Sy --noconfirm libctrpf 3gxtool
 
-      - name: Clone PabloMK7 CTRPluginFramework-BlankTemplate
-        run: |
-          git clone --depth=1 https://github.com/PabloMK7/CTRPluginFramework-BlankTemplate template
-          
-      - name: Prepare Source Files
-        run: |
-          cp android_mod/main.cpp template/Sources/
-          cp android_mod/Entity.hpp template/Includes/
-          cp android_mod/NetworkClient.hpp template/Includes/
-          
-      - name: Build .3gx plugin
+      - name: Build
         env:
           DEVKITPRO: /opt/devkitpro
           DEVKITARM: /opt/devkitpro/devkitARM
         run: |
           export PATH="${DEVKITARM}/bin:${DEVKITPRO}/tools/bin:${PATH}"
-          cd template
-          make
-          
-          mkdir -p ../android_mod/build
-          find . -name "*.3gx" -exec cp {} ../android_mod/build/OrasMmo.3gx \;
+          test ! -f 3ds_plugin/Includes/ServerConfig.local.hpp
+          make -C 3ds_plugin
+          mkdir -p out && cp 3ds_plugin/3ds_plugin.3gx out/OrasMmo.3gx
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: OrasMmo-3gx
-          path: android_mod/build/OrasMmo.3gx
-          if-no-files-found: warn
-          retention-days: 90
+          path: out/OrasMmo.3gx
+          retention-days: 30
