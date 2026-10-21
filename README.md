@@ -99,9 +99,9 @@
 
 ```mermaid
 flowchart LR
-    A["🎮 You<br/>game + Azahar + plugin"] <-->|"position, chat, emotes<br/>TCP 9000 · room code"| S[("🖥️ Server<br/>server.py")]
-    S <-->|"position, chat, emotes"| B["🎮 Your friends<br/>game + Azahar + plugin"]
-    A -.-|"⚔️ battles and trades · Azahar room, UDP 24872"| B
+    A["🎮 You<br/>game + Azahar + plugin"] <-->|"position, chat<br/>TCP 9000"| S[("🖥️ Server<br/>server.py")]
+    S <-->|"position, chat"| B["🎮 Your friends<br/>game + Azahar + plugin"]
+    A -.-|"⚔️ battles & trades<br/>Azahar room · UDP 24872"| B
 ```
 
 - The **plugin** (`OrasMmo.3gx`) runs inside the game: it reads where you are and draws your friends, their
