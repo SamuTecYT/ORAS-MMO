@@ -21,6 +21,11 @@ la vez y salas con ranking guardado. Opcional: ORAS_ROOMS = lista de salas permi
 v17.0 r3: como mucho 4 jugadores de una misma IP en una sala, 5 códigos de sala distintos por IP cada 10 min (misma
 respuesta que una sala no permitida) y solo se reenvían los tipos de paquete que manda el plugin (lista blanca). Este
 mismo equipo (127.x) no cuenta para esos límites, para poder probar con bots locales.
+v17.0 r4: ranking con llave. El plugin manda (solo al servidor, paquete 0x34) una huella de su llave secreta
+mmo_key.txt; el primero que guarda puntos con un nombre se queda con él. Otro jugador con ese nombre (o un plugin viejo
+sin llave) no puede cambiar ni borrar esos puntos, los demás lo ven como "nombre*" y él recibe NAME_TAKEN (0x35). Un
+nombre sin jugar ORAS_RANK_CLAIM_DAYS días se puede volver a usar, y cada IP crea como mucho ORAS_RANK_NEW_PER_IP
+nombres nuevos en el ranking al día. El "OK:ROOM:<sala>:KEY:<id>" avisa al plugin de que el servidor entiende la llave.
 
 Variables de entorno opcionales:
   PORT (9000) · ORAS_MAX_PLAYERS (12) · ORAS_IDLE_TIMEOUT (60 s) · ORAS_QUEUE_MAX (256 paquetes)
@@ -29,10 +34,12 @@ Variables de entorno opcionales:
   ORAS_MAX_PPS (120 paquetes/s por jugador; el plugin manda ~30) · ORAS_BURST (240)
   ORAS_ROOMS ("" = cualquier sala; p. ej. "MiSala,Otra" = solo esas)
   ORAS_MAX_PER_IP_ROOM (4) · ORAS_ROOM_TRIES (5) · ORAS_ROOM_TRIES_WINDOW (600 s)
+  ORAS_RANK_CLAIM_DAYS (30) · ORAS_RANK_NEW_PER_IP (5 nombres nuevos al día)
 """
 
 import asyncio
 import collections
+import hashlib
 import json
 import logging
 import os
@@ -82,6 +89,13 @@ EXEMPT_LOOPBACK = True          # este mismo equipo (pruebas, bots locales) no c
 # Solo se reenvían los tipos que manda el plugin. LEAVE (0x23) y RANK_SNAPSHOT (0x33) los genera solo el servidor:
 # si llegan de un cliente se descartan (salidas o ranking falsos para los demás).
 RELAY_TYPES = frozenset((PKT_POSITION, 0x02, 0x03, 0x20, 0x21, 0x22, PKT_PING, PKT_STATS, 0x32))
+# v17.0 r4: ranking con llave. KEY (cliente -> servidor, nunca se reenvía): msg[0..15] = huella de la llave del jugador
+# para este servidor y sala. NAME_TAKEN (servidor -> ese cliente): su nombre ya es de otro jugador.
+PKT_KEY, PKT_NAME_TAKEN = 0x34, 0x35
+KEY_LEN = 16
+RANK_CLAIM_DAYS = float(os.environ.get("ORAS_RANK_CLAIM_DAYS", 30))   # nombre sin jugar tantos días: se puede reclamar
+RANK_NEW_PER_IP = int(os.environ.get("ORAS_RANK_NEW_PER_IP", 5))     # nombres nuevos en el ranking por IP...
+RANK_NEW_WINDOW = 86400.0                                             # ...cada 24 h (nadie llena el ranking de falsos)
 OFF_MODEL, OFF_FLAGS, OFF_VERSION, OFF_NAME, OFF_MSG = 2, 23, 26, 30, 44
 STATS_LEN = 18
 DROPPABLE = (PKT_POSITION, PKT_PING)    # "último valor gana": se pueden descartar si un cliente va lento
@@ -109,6 +123,11 @@ class Client:
         self.tokens = BURST     # v17.0: límite de paquetes por segundo (cubo de fichas)
         self.last_tick = time.monotonic()
         self.flooded = 0        # paquetes descartados por pasarse del límite
+        self.key = None         # type: Optional[str]  # v17.0 r4: huella de su llave (None = plugin sin llave)
+        self.denied = False     # usa un nombre que es de otro: no entra en el ranking y los demás lo ven con "*"
+        self.denied_for = ""    # nombre por el que ya se le avisó (NAME_TAKEN una vez por nombre)
+        self.wrote = set()      # nombres (rank_key) cuyo ranking guardó en esta conexión
+        self.new_warned = False
 
     def allow(self) -> bool:
         """v17.0: un jugador no puede inundar la sala (cada paquete se reenvía a todos los demás)."""
@@ -171,6 +190,8 @@ conn_by_ip: Dict[str, int] = {}
 # v17.0 r3: códigos de sala probados por cada IP (código -> última vez) y último aviso en el registro por IP
 room_tries: Dict[str, Dict[str, float]] = {}
 tries_warned: Dict[str, float] = {}
+# v17.0 r4: cuándo creó cada IP un nombre nuevo en el ranking (límite diario)
+rank_new: Dict[str, List[float]] = {}
 
 
 def is_loopback(ip: str) -> bool:
@@ -197,6 +218,49 @@ def prune_room_tries(now: float) -> None:
         del room_tries[ip]
     for ip in [i for i, t in tries_warned.items() if now - t > ROOM_TRIES_WINDOW]:
         del tries_warned[ip]
+    for ip in [i for i, ts in rank_new.items() if all(now - t > RANK_NEW_WINDOW for t in ts)]:
+        del rank_new[ip]
+
+
+def new_name_allowed(ip: str, now: float) -> bool:
+    """v17.0 r4: una IP crea como mucho RANK_NEW_PER_IP nombres nuevos en el ranking al día (si no, cambiando de nombre
+    sin parar se llenaría el ranking de falsos y se borrarían las entradas de verdad, que son como mucho 64)."""
+    if is_loopback(ip):
+        return True
+    recent = [t for t in rank_new.get(ip, []) if now - t < RANK_NEW_WINDOW]
+    if len(recent) >= RANK_NEW_PER_IP:
+        rank_new[ip] = recent
+        return False
+    recent.append(now)
+    rank_new[ip] = recent
+    return True
+
+
+def key_fingerprint(token: bytes) -> str:
+    """v17.0 r4: lo que se guarda es la huella de la llave, nunca la llave (así el archivo del ranking no la revela)."""
+    return hashlib.sha256(b"oras-rank-key|" + token).hexdigest()
+
+
+def is_fingerprint(v) -> bool:
+    return isinstance(v, str) and len(v) == 64 and all(c in "0123456789abcdef" for c in v)
+
+
+def shown_name(name: str) -> str:
+    """Cómo ven los demás a quien usa un nombre que es de otro jugador: con un "*" (no se confunde con el dueño)."""
+    return name[:12] + "*"
+
+
+def with_name(pkt: bytes, name: str) -> bytes:
+    raw = name.encode("ascii", "replace")[:13].ljust(14, b"\x00")
+    return pkt[:OFF_NAME] + raw + pkt[OFF_NAME + 14:]
+
+
+def name_taken_packet(pid: int, name: str) -> bytes:
+    p = bytearray(PKT_SIZE)
+    p[0] = PKT_NAME_TAKEN
+    p[1] = pid
+    p[OFF_VERSION] = RANK_MIN_VERSION
+    return with_name(bytes(p), name)
 
 
 def packet_name(pkt: bytes) -> str:
@@ -244,6 +308,8 @@ class StatsBook:
                     k = rank_key(v["name"])          # archivos de la v16 ("nombre|modelo"): se unen, gana el más reciente
                     if not rankable(v["name"]):      # v16.3: "Jugador" (nombre de fábrica) fuera
                         continue
+                    if "owner" in v and not is_fingerprint(v["owner"]):
+                        v.pop("owner")               # v17.0 r4: huella rota = entrada sin dueño
                     if k not in book or v.get("last_seen", 0) > book[k].get("last_seen", 0):
                         book[k] = v
                 self.rooms[room] = book
@@ -255,17 +321,44 @@ class StatsBook:
     def _path(self, room: str) -> str:
         return os.path.join(self.folder, f"ranking_{room.encode('ascii').hex()}.json")   # hex: nunca sale de la carpeta
 
-    def update(self, room: str, name: str, model: int, stats: bytes, now: Optional[float] = None) -> None:
+    def has(self, room: str, name: str) -> bool:
+        return rank_key(name) in self.rooms.get(room, {})
+
+    def owner_ok(self, room: str, name: str, key: Optional[str], now: Optional[float] = None) -> bool:
+        """v17.0 r4: ¿puede quien tiene la llave `key` (None = plugin sin llave) usar ese nombre en el ranking? Sí si el
+        nombre es nuevo, no tiene dueño o es suyo; también si su dueño lleva RANK_CLAIM_DAYS días sin jugar."""
+        if not rankable(name):
+            return True
+        e = self.rooms.get(room, {}).get(rank_key(name))
+        if e is None or not e.get("owner") or e["owner"] == key:
+            return True
+        now = time.time() if now is None else now
+        return now - e.get("last_seen", 0) > RANK_CLAIM_DAYS * 86400
+
+    def owned_by(self, room: str, name: str, key: Optional[str]) -> bool:
+        e = self.rooms.get(room, {}).get(rank_key(name))
+        return key is not None and e is not None and e.get("owner") == key
+
+    def update(self, room: str, name: str, model: int, stats: bytes, now: Optional[float] = None,
+               owner: Optional[str] = None) -> bool:
+        """Guarda sus puntos. v17.0 r4: con llave (owner), el nombre queda a su nombre; sin llave, la entrada queda sin
+        dueño (plugins viejos). Nunca pisa la entrada de otro dueño. True = guardado."""
         if not rankable(name) or len(stats) != STATS_LEN:
-            return
+            return False
         if room not in self.rooms and len(self.rooms) >= RANK_MAX_ROOMS:
-            return                                   # v17.0: tope de salas con ranking (nadie llena el disco)
+            return False                             # v17.0: tope de salas con ranking (nadie llena el disco)
+        now = time.time() if now is None else now
+        if not self.owner_ok(room, name, owner, now):
+            return False
         book = self.rooms.setdefault(room, {})
-        book[rank_key(name)] = {"name": name, "model": model, "stats": stats.hex(),
-                                "last_seen": time.time() if now is None else now}
+        entry = {"name": name, "model": model, "stats": stats.hex(), "last_seen": now}
+        if owner:
+            entry["owner"] = owner
+        book[rank_key(name)] = entry
         while len(book) > RANK_MAX_ENTRIES:
             del book[min(book, key=lambda k: book[k]["last_seen"])]
         self.dirty.add(room)
+        return True
 
     def forget(self, room: str, name: str) -> None:
         """v16.3: la persona se cambió el nombre: su entrada con el nombre viejo sobra."""
@@ -294,7 +387,7 @@ BOOK = StatsBook(RANK_DIR)
 
 def send_rank_snapshot(room: Dict[int, Client], client: Client) -> None:
     """Todas las entradas del ranking de la sala, marcando quién está desconectado."""
-    online = {rank_key(c.name): pid for pid, c in room.items() if c.name}
+    online = {rank_key(c.name): pid for pid, c in room.items() if c.name and not c.denied}   # r4: no quien usa un nombre ajeno
     now = time.time()
     for e in BOOK.entries(client.room_code):
         pid = online.get(rank_key(e["name"]), 0)
@@ -421,8 +514,9 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
         room[player_id] = client
         log.info(f"✅ Jugador {player_id} conectado a la sala '{room_code}' desde {addr[0]} ({len(room)}/{MAX_PLAYERS})")
 
-        # Respuesta de bienvenida: OK:ROOM:<code>:<player_id>  (va sola: aún no es receptor)
-        writer.write(f"OK:ROOM:{room_code}:{player_id}\n".encode('ascii'))
+        # Respuesta de bienvenida: OK:ROOM:<code>:KEY:<player_id>  (va sola: aún no es receptor). v17.0 r4: "KEY:" = este
+        # servidor entiende la llave del ranking; los plugins viejos solo leen lo que va tras el último ':' (el id).
+        writer.write(f"OK:ROOM:{room_code}:KEY:{player_id}\n".encode('ascii'))
         client.task = asyncio.ensure_future(client.writer_loop())
 
         # Bucle principal de retransmisión de paquetes (64 bytes exactos)
@@ -436,6 +530,11 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             if not client.allow():                    # v17.0: demasiados paquetes por segundo: se descartan
                 if client.flooded in (1, 1000):
                     log.warning(f"⛔ Jugador {player_id} (sala '{room_code}', {addr[0]}) manda demasiados paquetes: se descartan")
+                continue
+            if packet[0] == PKT_KEY:                  # v17.0 r4: su llave del ranking (solo la ve el servidor)
+                token = packet[OFF_MSG:OFF_MSG + KEY_LEN]
+                if client.key is None and any(token):  # una por conexión: no se pueden probar llaves en bucle
+                    client.key = key_fingerprint(token)
                 continue
             if packet[0] not in RELAY_TYPES:          # v17.0 r3: lista blanca de tipos (ni ranking ni salidas falsos)
                 client.bad_types += 1
@@ -451,13 +550,35 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
             if nm:
                 if client.name and rank_key(nm) != rank_key(client.name):   # v16.3: se cambió el nombre
                     log.info(f"✏️ Jugador {player_id} ahora se llama '{nm}' (antes '{client.name}')")
-                    BOOK.forget(room_code, client.name)
+                    # v17.0 r4: su entrada vieja se borra solo si era suya (su llave, o la guardó él en esta conexión)
+                    if BOOK.owned_by(room_code, client.name, client.key) or (
+                            rank_key(client.name) in client.wrote and BOOK.owner_ok(room_code, client.name, client.key)):
+                        BOOK.forget(room_code, client.name)
                 client.name = nm
                 client.model = struct.unpack_from("<H", packet, OFF_MODEL)[0]
-            if packet[0] == PKT_STATS and client.name and packet[OFF_MSG + 17] & 0x0F:   # sin datos conocidos: no pisa lo guardado
-                BOOK.update(room_code, client.name, client.model, packet[OFF_MSG:OFF_MSG + STATS_LEN])
+            if client.name:                           # v17.0 r4: ¿ese nombre es de otro jugador?
+                client.denied = not BOOK.owner_ok(room_code, client.name, client.key)
+                if not client.denied:
+                    client.denied_for = ""
+                elif client.denied_for != rank_key(client.name):
+                    client.denied_for = rank_key(client.name)
+                    log.info(f"🔒 Jugador {player_id} ('{client.name}', {addr[0]}) usa un nombre que es de otro jugador: "
+                             f"fuera del ranking")
+                    if client.key is not None:        # los plugins con llave entienden el aviso (los viejos no)
+                        client.send(name_taken_packet(player_id, client.name))
+            if packet[0] == PKT_STATS and client.name and not client.denied and packet[OFF_MSG + 17] & 0x0F:   # sin datos conocidos: no pisa lo guardado
+                if rankable(client.name) and (BOOK.has(room_code, client.name) or new_name_allowed(ip, time.monotonic())):
+                    if BOOK.update(room_code, client.name, client.model, packet[OFF_MSG:OFF_MSG + STATS_LEN], owner=client.key):
+                        client.wrote.add(rank_key(client.name))
+                elif rankable(client.name) and not client.new_warned:
+                    client.new_warned = True
+                    log.warning(f"⛔ {ip} ya creó {RANK_NEW_PER_IP} nombres nuevos en el ranking hoy: '{client.name}' no se guarda")
             if first and client.version >= RANK_MIN_VERSION:
                 send_rank_snapshot(room, client)
+            if client.denied:                         # v17.0 r4: sus puntos no entran y los demás lo ven como "nombre*"
+                if packet[0] == PKT_STATS:
+                    continue
+                packet = with_name(packet, shown_name(client.name))
             # Susurro: CHAT (0x03) con btype (byte 22) = id del destinatario -> solo a esa persona
             if packet[0] == 0x03 and packet[22] != 0:
                 target = room.get(packet[22])
@@ -528,6 +649,7 @@ async def main():
     log.info(f"   Máximo {MAX_PLAYERS} jugadores por sala · inactividad {IDLE_TIMEOUT:.0f}s")
     log.info(f"   Por IP: {MAX_PER_IP} conexiones, {MAX_PER_IP_ROOM} en una misma sala, {ROOM_TRIES} códigos de sala cada {ROOM_TRIES_WINDOW:.0f}s")
     log.info(f"   Salas permitidas: {', '.join(sorted(ALLOWED_ROOMS)) if ALLOWED_ROOMS else 'cualquiera'}")
+    log.info(f"   Ranking con llave: un nombre sin jugar {RANK_CLAIM_DAYS:.0f} días se libera; {RANK_NEW_PER_IP} nombres nuevos por IP al día")
     log.info("   Esperando conexiones de jugadores...")
     log.info("==================================================")
     status = asyncio.ensure_future(status_loop())

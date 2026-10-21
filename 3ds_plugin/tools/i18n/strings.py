@@ -457,6 +457,12 @@ T = [
      "%s laedt dich zum Tausch ein (SELECT)", None, None),
     ("%s acepto! Abran el PSS", "%s accepted! Open the PSS", "%s a accepte ! Ouvrez le PSS", "%s ha accettato! Aprite il PSS", "%s hat angenommen! PSS oeffnen", None, None),
     ("%s rechazo la invitacion", "%s declined the invitation", "%s a refuse l'invitation", "%s ha rifiutato l'invito", "%s hat abgelehnt", None, None),
+    # v17.0 r4: el servidor avisa de que tu nombre ya es de otro jugador (ranking con llave). Máx. 47 letras en el chat
+    ("Nombre %s: ya es de otro jugador", "Name %s belongs to someone else", "Le nom %s est deja pris", "Il nome %s e gia di un altro",
+     "Name %s gehoert schon jemandem", None, None),
+    ("Cambialo en SELECT para salir en el ranking", "Change it in SELECT to appear in the ranking", "Changez-le dans SELECT pour le classement",
+     "Cambialo in SELECT per la classifica", "Aendere ihn in SELECT fuer die Rangliste", None, None),
+    ("Nombre ocupado", "Name taken", "Nom deja pris", "Nome gia usato", "Name vergeben", None, None),
     # --- mensajes rápidos (se envía el número: cada uno lo ve en su idioma). Sin acentos: van en las burbujas del OSD
     ("Hola a todos!", "Hi everyone!", "Salut tout le monde !", "Ciao a tutti!", "Hallo zusammen!", "Hi everyone!", "Hi everyone!"),
     ("Estoy aqui!", "I'm here!", "Je suis la !", "Sono qui!", "Ich bin hier!", "I'm here!", "I'm here!"),

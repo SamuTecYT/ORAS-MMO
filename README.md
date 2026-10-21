@@ -340,6 +340,7 @@ Most players never touch these: the SELECT menu writes them for you. They live n
 | `mmo_server.txt` | Server address: an IPv4, optionally with `:port` (no domain names) | `203.0.113.10:9000` |
 | `mmo_room.txt` | Room code (1–16 characters) | `Hoenn-Crew-77` |
 | `mmo_name.txt` | Your nickname (up to 13 characters) | `Ash` |
+| `mmo_key.txt` | Your secret ranking key, so nobody else can use your nickname to change your stats. Don't share it; copy it to play on another device | written by the plugin |
 | `mmo_settings.txt` | Everything you set in the SELECT menu | written by the plugin |
 | `mmo_pokes_3d.bin` | 3D followers pack (optional) | [how to make it](#3d-followers) |
 | `mmo_log.txt` | Log, useful for bug reports | written by the plugin |
@@ -492,7 +493,7 @@ CONTRIBUTING.md        How to contribute · SECURITY.md: how to report vulnerabi
 
 - 🙅 **No accounts, no passwords, no tracking.** The plugin only talks to the server you choose.
 - 📤 **What the server gets:** your nickname, trainer model, position, chat and emotes, invitations and ranking stats
-  (badges, Pokédex, play time, team levels). Like any online game server, it also sees your IP address.
+  (badges, Pokédex, play time, team levels), plus a fingerprint of your ranking key (never the key). Like any online game server, it also sees your IP address.
 - 🔑 **The room code is the key.** Anyone who knows your server and room code can join that room with any nickname.
   Use a private room code (or `ORAS_ROOMS`) and only share it with people you trust.
 
@@ -502,6 +503,8 @@ CONTRIBUTING.md        How to contribute · SECURITY.md: how to report vulnerabi
 - The server checks the room code, sets each player's id itself (nobody can pretend to be another slot), limits every
   client's queue and enforces connection limits (in total, per IP, rooms and ranking files).
 - Ranking files are named after the room code in hex, so a room code can never write outside the server folder.
+- The first player who saves stats with a nickname owns it (`mmo_key.txt`): someone else with that nickname can't
+  change or delete them and shows up as `nickname*`. Details in [PROTOCOL](docs/PROTOCOL.md#ranking-keys).
 - Each player can send at most 120 packets per second (the plugin sends about 30). A flood is dropped, never relayed.
 - The plugin checks everything it receives (player ids; text is always cut and terminated) and every file it reads
   (`mmo_*.txt` and the followers pack).

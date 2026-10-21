@@ -21,6 +21,7 @@ mmo_room.txt
 mmo_server.txt
 mmo_settings.txt
 mmo_log.txt
+mmo_key.txt
 mmo_dev_*
 
 # Servidor: ranking (apodos y datos de jugadores) y secretos / server ranking and secrets

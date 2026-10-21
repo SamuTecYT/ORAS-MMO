@@ -73,6 +73,7 @@ void NetworkClient::Disconnect() {
 
 int NetworkClient::Join(const std::string &ip, uint16_t port, const std::string &room, std::string &err) {
     Disconnect();
+    m_keys = false;
     if (!EnsureSoc()) { err = "socInit fallo"; return 0; }
 
     m_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -157,6 +158,9 @@ int NetworkClient::Join(const std::string &ip, uint16_t port, const std::string 
             size_t c = line.find_last_of(':');
             int id = atoi(line.c_str() + c + 1);
             if (id < 1 || id > MAX_MMO_PLAYERS) { err = "id invalido"; Disconnect(); return 0; }
+            // v17.0 r4: "OK:ROOM:<sala>:KEY:<id>" = el servidor entiende la llave del ranking (con uno viejo no se manda)
+            std::string keyed = "OK:ROOM:" + room + ":KEY:";
+            m_keys = c + 1 == keyed.size() && line.compare(0, keyed.size(), keyed) == 0;
             return id;
         }
         if (m_rxLen >= sizeof(m_rx) || osGetTime() > deadline) { err = "sin respuesta"; Disconnect(); return 0; }
@@ -180,7 +184,7 @@ bool NetworkClient::LooksValid(const uint8_t *p) {
     uint8_t t = p[0], id = p[1];
     bool typeOk = (t == MMO_PKT_POSITION || t == MMO_PKT_EMOTE || t == MMO_PKT_CHAT || t == MMO_PKT_EVENT_REQ ||
                    t == MMO_PKT_EVENT_RESP || t == MMO_PKT_EVENT_END || t == MMO_PKT_LEAVE || t == MMO_PKT_PING ||
-                   t == MMO_PKT_STATS || t == MMO_PKT_BATTLE ||
+                   t == MMO_PKT_STATS || t == MMO_PKT_BATTLE || t == MMO_PKT_NAME_TAKEN ||
                    t == 0x04 || t == 0x30);
     if (t == MMO_PKT_RANK_SNAPSHOT) return id <= MAX_MMO_PLAYERS && p[26] >= 16;   // v16: id 0 = desconectado
     return typeOk && id >= 1 && id <= MAX_MMO_PLAYERS;

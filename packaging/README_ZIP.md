@@ -16,6 +16,8 @@
 2. Enable Azahar's **3GX plugin loader** (System settings). Android: graphics API **OpenGL ES**.
 3. Load your save and press **SELECT**. Everyone must use the same server and the same **room code**
    (SELECT → Connection).
+4. The plugin creates `mmo_key.txt` next to it: your secret ranking key, so nobody else can use your nickname to
+   change your stats. Keep it, don't share it, and copy it to play with the same nickname on another device.
 
 ## Host a server
 `python3 server/server.py` (TCP 9000, Python 3.8+, no dependencies), or double-click `server/run_server.bat`.
@@ -48,6 +50,8 @@ the repository). Project: https://github.com/SamuTecYT/ORAS-MMO
 2. Activa el **cargador de plugins 3GX** de Azahar (ajustes de Sistema). Android: gráficos **OpenGL ES**.
 3. Carga tu partida y pulsa **SELECT**. Todos usan el mismo servidor y el mismo **código de sala**
    (SELECT → Conexión).
+4. El plugin crea `mmo_key.txt` a su lado: tu llave secreta del ranking, para que nadie use tu apodo para cambiar tus
+   puntos. Guárdala, no la compartas y cópiala para jugar con el mismo apodo en otro aparato.
 
 ## Montar un servidor
 `python3 server/server.py` (TCP 9000, Python 3.8+, sin dependencias), o doble clic en `server/run_server.bat`.

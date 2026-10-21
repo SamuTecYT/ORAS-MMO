@@ -98,6 +98,8 @@ pm2 start server.py --interpreter python3 --name oras-mmo
 | `ORAS_ROOM_TRIES_WINDOW` | `600` | That window, in seconds |
 | `ORAS_MAX_ROOMS` | `100` | Rooms open at the same time |
 | `ORAS_RANK_MAX_ROOMS` | `200` | Different rooms with a saved ranking |
+| `ORAS_RANK_CLAIM_DAYS` | `30` | Days without playing before someone else can take a ranking nickname |
+| `ORAS_RANK_NEW_PER_IP` | `5` | New ranking nicknames one IP can create per day |
 | `ORAS_MAX_PPS` | `120` | Packets per second one player may send (the plugin sends ~30); extra ones are dropped |
 | `ORAS_BURST` | `240` | Short burst allowed above that rate |
 | `ORAS_ROOMS` | *(empty)* | Comma-separated list of the only room codes allowed (private server) |
@@ -116,6 +118,9 @@ Real battles and trades go through Azahar's own multiplayer room (UDP 24872). Ho
   `ORAS_ROOMS`.
 - 🧱 Connections from this same computer (`127.x`) don't count for the per-room and room-code limits, so you can
   test with local bots.
+- 🏷️ Ranking keys: the first player who saves stats with a nickname owns it, and nobody else can change or delete
+  them ([details](../docs/PROTOCOL.md#ranking-keys)). If a player loses `mmo_key.txt`, stop the server and remove the
+  `owner` field of their entry in the ranking file, or wait `ORAS_RANK_CLAIM_DAYS`.
 - 📄 Ranking files contain your players' nicknames and stats: don't publish them.
 - 📝 The server logs the IP addresses that connect (useful to spot abuse): keep the logs private.
 - 🧪 Tests: `python -m unittest test_server_ranking.py test_server_limits.py`.
@@ -191,6 +196,8 @@ Usa el ejemplo de **systemd** o **PM2** de la [parte en inglés](#english) (los 
 | `ORAS_ROOM_TRIES_WINDOW` | `600` | Esa ventana, en segundos |
 | `ORAS_MAX_ROOMS` | `100` | Salas abiertas a la vez |
 | `ORAS_RANK_MAX_ROOMS` | `200` | Salas distintas con ranking guardado |
+| `ORAS_RANK_CLAIM_DAYS` | `30` | Días sin jugar tras los que otro puede quedarse con un apodo del ranking |
+| `ORAS_RANK_NEW_PER_IP` | `5` | Apodos nuevos en el ranking que puede crear una IP al día |
 | `ORAS_MAX_PPS` | `120` | Paquetes por segundo que puede mandar un jugador (el plugin manda ~30); los de más se descartan |
 | `ORAS_BURST` | `240` | Ráfaga corta permitida por encima de ese ritmo |
 | `ORAS_ROOMS` | *(vacío)* | Lista, separada por comas, de los únicos códigos de sala permitidos (servidor privado) |
@@ -208,6 +215,9 @@ Los combates e intercambios de verdad van por la sala multijugador de Azahar (UD
 - 🔑 No hay cuentas: el **código de sala** es lo único que separa a cada grupo. Usa uno privado, u `ORAS_ROOMS`.
 - 🧱 Las conexiones desde este mismo equipo (`127.x`) no cuentan para los límites por sala y de códigos, para que
   puedas probar con bots locales.
+- 🏷️ Ranking con llave: el primero que guarda puntos con un apodo se queda con él y nadie más puede cambiarlos ni
+  borrarlos ([detalles](../docs/PROTOCOL.md#ranking-keys)). Si un jugador pierde `mmo_key.txt`, para el servidor y
+  quita el campo `owner` de su entrada en el archivo del ranking, o espera `ORAS_RANK_CLAIM_DAYS`.
 - 📄 Los archivos de ranking llevan los apodos y datos de tus jugadores: no los publiques.
 - 📝 El servidor apunta las IP que se conectan (sirve para detectar abusos): guarda el registro en privado.
 - 🧪 Pruebas: `python -m unittest test_server_ranking.py test_server_limits.py`.

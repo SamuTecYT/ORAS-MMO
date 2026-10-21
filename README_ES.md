@@ -350,6 +350,7 @@ Casi nadie los toca: el menú SELECT los escribe por ti. Están junto al plugin.
 | `mmo_server.txt` | Dirección del servidor: una IPv4, con `:puerto` si hace falta (sin nombres de dominio) | `203.0.113.10:9000` |
 | `mmo_room.txt` | Código de sala (de 1 a 16 caracteres) | `Hoenn-Crew-77` |
 | `mmo_name.txt` | Tu apodo (hasta 13 caracteres) | `Ash` |
+| `mmo_key.txt` | Tu llave secreta del ranking: así nadie usa tu apodo para cambiar tus puntos. No la compartas; cópiala para jugar en otro aparato | la escribe el plugin |
 | `mmo_settings.txt` | Todo lo que eliges en el menú SELECT | lo escribe el plugin |
 | `mmo_pokes_3d.bin` | Paquete de Pokémon 3D (opcional) | [cómo crearlo](#acompanantes-3d) |
 | `mmo_log.txt` | Registro, útil para avisar de fallos | lo escribe el plugin |
@@ -504,7 +505,8 @@ CONTRIBUTING.md        Cómo colaborar · SECURITY.md: cómo avisar de fallos de
 
 - 🙅 **Sin cuentas, sin contraseñas, sin rastreo.** El plugin solo habla con el servidor que tú elijas.
 - 📤 **Qué recibe el servidor:** tu apodo, modelo de entrenador, posición, chat y emotes, invitaciones y datos del
-  ranking (medallas, Pokédex, tiempo de juego, niveles del equipo). Como cualquier servidor de juego online, también
+  ranking (medallas, Pokédex, tiempo de juego, niveles del equipo), y una huella de tu llave del ranking (nunca la
+  llave). Como cualquier servidor de juego online, también
   ve tu dirección IP.
 - 🔑 **El código de sala es la llave.** Quien sepa tu servidor y tu código de sala puede entrar en esa sala con
   cualquier apodo. Usa un código privado (o `ORAS_ROOMS`) y compártelo solo con gente de confianza.
@@ -517,6 +519,8 @@ CONTRIBUTING.md        Cómo colaborar · SECURITY.md: cómo avisar de fallos de
   ranking).
 - Los archivos de ranking se nombran con el código de sala en hexadecimal, así que un código nunca puede escribir
   fuera de la carpeta del servidor.
+- El primero que guarda puntos con un apodo se queda con él (`mmo_key.txt`): otro jugador con ese apodo no puede
+  cambiar ni borrar esos puntos y los demás lo ven como `apodo*`. Detalles en [PROTOCOL](docs/PROTOCOL.md#ranking-keys).
 - Cada jugador puede mandar como mucho 120 paquetes por segundo (el plugin manda unos 30). Si alguien satura, sus
   paquetes se descartan y no llegan a nadie.
 - El plugin revisa todo lo que recibe (números de jugador; los textos siempre se cortan y se terminan bien) y cada

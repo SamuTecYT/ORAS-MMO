@@ -48,6 +48,8 @@
 #define MMO_PKT_STATS      0x31   // v14: progreso para el ranking (en msg[])
 #define MMO_PKT_BATTLE     0x32   // v14: combate en curso para que los amigos lo vean (en msg[])
 #define MMO_PKT_RANK_SNAPSHOT 0x33 // v16: lo envía el servidor al entrar: ranking guardado (también desconectados)
+#define MMO_PKT_KEY        0x34   // v17.0 r4: msg[0..15] = huella de tu llave del ranking (solo al servidor, PlayerKey)
+#define MMO_PKT_NAME_TAKEN 0x35   // v17.0 r4: el servidor avisa de que tu nombre ya es de otro jugador
 
 // Bits de PlayerPacket::flags
 #define MMO_FLAG_IN_BATTLE   0x01

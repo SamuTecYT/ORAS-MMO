@@ -35,6 +35,7 @@
 #include "Players.hpp"
 #include "GameState.hpp"
 #include "Config.hpp"
+#include "PlayerKey.hpp"
 #include "App.hpp"
 #include "Log.hpp"
 #include "RomFS.hpp"
@@ -162,6 +163,17 @@ static void HandlePacket(const PlayerPacket &p, u64 now) {
             App::PushChat(line, 0xB0B0B0);
             break;
         }
+        case MMO_PKT_NAME_TAKEN: {      // v17.0 r4: tu nombre ya es de otro jugador (con su llave): tus puntos no se guardan
+            char nm[14];
+            Proto::CopyText(nm, sizeof(nm), p.nickname);
+            snprintf(line, sizeof(line), Lang::TOsd("Nombre %s: ya es de otro jugador"), nm);
+            App::PushChat(line, 0xFF8080);
+            App::PushChat(Lang::TOsd("Cambialo en SELECT para salir en el ranking"), 0xFF8080);
+            // el aviso va a la derecha, a la altura del chat: corto para no pisar la línea larga de la izquierda
+            { char a[32]; App::AsciiFold(Lang::TOsd("Nombre ocupado"), a, sizeof(a)); OSD::Notify(a, Color::Red); }
+            Log::Write("Servidor: el nombre '%s' es de otro jugador (fuera del ranking)", nm);
+            break;
+        }
         default:
             break;
     }
@@ -253,6 +265,13 @@ static void NetworkThread(void *) {
                     backoff = 2000;
                     lastSend = lastPing = 0;
                     lastZone = 0xFFFF;
+                    // v17.0 r4: lo primero, la huella de tu llave del ranking (el servidor no la reenvía a nadie)
+                    if (net.ServerKeys() && PlayerKey::Ready()) {
+                        PlayerPacket k;
+                        FillCommon(k, MMO_PKT_KEY);
+                        PlayerKey::Token(ip, Cfg::ServerPort(), room, (u8 *)k.msg);
+                        net.Queue(k);
+                    }
                     if (!joinedAnnounced) {
                         char a[64], b[64];
                         snprintf(a, sizeof(a), Lang::TOsd("MMO: conectado a la sala %s"), room.c_str());
@@ -492,6 +511,7 @@ int main(void) {
     Log::Init();
     Log::Write("ORAS MMO %s iniciando", MMO_VERSION_STR);
     Cfg::Load();
+    PlayerKey::Init();                     // v17.0 r4: llave del ranking (mmo_key.txt; se crea la primera vez)
     GameLang::LogStatus();
     Lang::Init();
     // Fase 2: el gancho se instala UNA vez al arrancar (KB §12.8). v16.1: siempre (si la build del juego no es la

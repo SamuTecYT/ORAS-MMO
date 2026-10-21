@@ -23,6 +23,8 @@ public:
     int  Join(const std::string &ip, uint16_t port, const std::string &room, std::string &err);
     void Disconnect();
     bool IsConnected() const { return m_sock >= 0; }
+    // v17.0 r4: el servidor respondió "OK:ROOM:<sala>:KEY:<id>": guarda el ranking con llave (PlayerKey)
+    bool ServerKeys() const { return m_keys; }
 
     // Encola un paquete; Flush() intenta enviarlo sin bloquear. false = conexión perdida.
     bool Queue(const PlayerPacket &pkt);
@@ -39,6 +41,7 @@ private:
     static bool LooksValid(const uint8_t *p);
 
     int     m_sock    = -1;
+    bool    m_keys    = false;
     bool    m_socInit = false;
     bool    m_hwAlloc = false;
     u32     m_hwAddr  = 0;
