@@ -96,6 +96,7 @@ struct RemotePlayer {
     u32      skewStamp = 0;                // punto de referencia para medirlo (su hora / la mía)
     u64      skewNow = 0;
     bool     skewRef = false;
+    bool     wasInBattle = false;          // v17.0 r3: al salir del combate se vuelve a enganchar su reloj
     u64      prevRecv = 0;
     u32      prevStamp = 0;
     bool     prevValid = false;

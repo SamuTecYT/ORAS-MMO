@@ -224,8 +224,15 @@ void PlayerTable::OnPacket(const PlayerPacket &p, u64 nowMs) {
         rp.offQ8 += (off * 256 - rp.offQ8) / 48;
     }
     rp.clockOffset = rp.offQ8 / 256;
+    // v17.0 r3: en combate su emulador puede ir a otro ritmo (escenas más pesadas). Esas ventanas no cuentan para
+    // medir el ritmo de su reloj y, al terminar el combate, la reproducción se vuelve a enganchar al momento. Antes
+    // el ritmo "de combate" se quedaba y, al volver a caminar, se le dibujaba con retraso hasta que se corregía.
+    bool inBattle = (p.flags & MMO_FLAG_IN_BATTLE) != 0;
+    if (rp.wasInBattle && !inBattle) rp.playInit = false;
+    rp.wasInBattle = inBattle;
+    if (inBattle) rp.skewRef = false;
     // v16.1: ritmo de su reloj (ventanas de >= 5 s; un hueco de más de 2 s sin datos reinicia la medida)
-    if (rp.version >= 13) {
+    else if (rp.version >= 13) {
         if (!rp.skewRef || (s64)(nowMs - rp.newestRecv) > 2000) { rp.skewStamp = stamp; rp.skewNow = nowMs; rp.skewRef = true; }
         else if (nowMs - rp.skewNow >= 5000) {
             rp.skew = NetSmooth::SkewUpdate(rp.skew, (double)(s32)(stamp - rp.skewStamp), (double)(nowMs - rp.skewNow));

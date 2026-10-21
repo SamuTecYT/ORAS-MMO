@@ -10,8 +10,8 @@
  *    bloques) y sus estadísticas de equipo (+0x158, 22 bytes) cifradas con el mismo PV.
  *  - Tiempo de juego y Pokédex: el plugin los LOCALIZA solo (firmas: el tiempo avanza; la Pokédex tiene
  *    al inicial capturado) y los valida antes de usarlos.
- *  - Combate: copias de combate del equipo propio y del rival + estructura con nivel y PS en vivo
- *    (direcciones relativas al equipo, como Citra-Tracker).
+ *  - Combate (v17.0 r3): tablas del propio motor de combate con el Pokémon que lucha de cada lado (especie,
+ *    nivel y PS en vivo) y tipo de combate desde el evento EventBattleCall (GameStats.cpp).
  */
 #pragma once
 #include <3ds.h>

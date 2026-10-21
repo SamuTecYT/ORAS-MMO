@@ -12,11 +12,7 @@ static Mutex  s_mutex;
 static Mine   s_mine;
 static Battle s_battle;
 
-static const u32 OFF_PARTY  = 0x8C9E8;
-static const u32 SLOT       = 0x1E4;
 static const u32 PK_SIZE    = 232;         // 8 + 4 bloques de 56
-static const u32 PK_STATS   = 344;         // estadísticas de equipo dentro del hueco
-static const u32 MONGAP     = 580;
 
 static inline bool Ok(u32 a, u32 len) {
     if (a < 0x08000000 || a + len > 0x10000000) return false;
@@ -27,40 +23,8 @@ static inline u16 R16(u32 a) { return (u16)(R8(a) | (R8(a + 1) << 8)); }
 static inline u32 R32(u32 a) { return (u32)R16(a) | ((u32)R16(a + 2) << 16); }
 
 // ---------------------------------------------------------------------------------------------
-// PK6: descifrado (igual que PKHeX/Citra-Tracker) solo de lo que usamos
+// PK6: descifrado (igual que PKHeX) solo de lo que usamos
 struct Pk { u16 species; u8 level; u16 hp, hpMax; };
-static bool ReadPk(u32 a, Pk &out) {
-    memset(&out, 0, sizeof(out));
-    if (!Ok(a, PK_STATS + 22)) return false;
-    u8 e[PK_SIZE];
-    for (u32 i = 0; i < PK_SIZE; i++) e[i] = R8(a + i);
-    u32 pv = e[0] | (e[1] << 8) | (e[2] << 16) | ((u32)e[3] << 24);
-    if (!e[0] && !pv) return false;
-    static const u8 kPosA[24] = { 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 2, 3, 1, 1, 2, 3, 2, 3, 1, 1, 2, 3, 2, 3 };
-    u32 sv = ((pv >> 13) & 31) % 24;
-    // descifrar los 224 bytes de bloques con el LCRNG sembrado con el PV
-    u32 seed = pv;
-    for (u32 i = 8; i < PK_SIZE; i += 2) {
-        seed = seed * 0x41C64E6Du + 0x6073u;
-        u16 w = (u16)(e[i] | (e[i + 1] << 8)) ^ (u16)(seed >> 16);
-        e[i] = (u8)w; e[i + 1] = (u8)(w >> 8);
-    }
-    u32 aOff = 8 + 56 * kPosA[sv];
-    out.species = (u16)(e[aOff] | (e[aOff + 1] << 8));
-    // estadísticas de equipo: mismo PV, la secuencia vuelve a empezar
-    u8 st[22];
-    for (u32 i = 0; i < 22; i++) st[i] = R8(a + PK_STATS + i);
-    seed = pv;
-    for (u32 i = 0; i < 22; i += 2) {
-        seed = seed * 0x41C64E6Du + 0x6073u;
-        u16 w = (u16)(st[i] | (st[i + 1] << 8)) ^ (u16)(seed >> 16);
-        st[i] = (u8)w; st[i + 1] = (u8)(w >> 8);
-    }
-    out.level = st[4];
-    out.hp = (u16)(st[8] | (st[9] << 8));
-    out.hpMax = (u16)(st[10] | (st[11] << 8));
-    return out.species >= 1 && out.species <= 721 && out.level >= 1 && out.level <= 100 && out.hpMax > 0 && out.hp <= out.hpMax;
-}
 
 // ---------------------------------------------------------------------------------------------
 // v16: todo por la cadena de punteros del propio juego (KB §2.1, decompilado 2026-10-16), sin búsquedas
@@ -184,45 +148,54 @@ static void UpdateMine(u32 P, u64 now) {
     s_mine = m;
 }
 
-static void UpdateBattle(u32 P) {
+// v17.0 r3: el combate sale de las tablas del propio motor de combate (en vivo 2026-10-20 con GDB, combate salvaje con
+// cambio de Pokémon; son las mismas que usan los trucos públicos de "PS infinitos", KB §13.13):
+//   0x081FB478 == 0x40001 mientras hay combate
+//   0x081FB58C: tu equipo, 6 punteros a la ficha de combate de cada Pokémon; [0] = el que lucha (al cambiar, el
+//               juego lo pone el primero). 0x081FB5A8: el equipo rival, [0] = el que lucha.
+//   ficha: +0xC especie u16, +0xE PS máximos u16, +0x10 PS u16, +0x18 nivel u8
+//   tipo: evento EventBattleCall (vt 0x5DED9C) +0x20 -> datos del combate; byte 0: 0 salvaje, 1 entrenador
+//         (lo escriben 0x1D8B94 / 0x1D6E0C para los entrenadores [S]).
+// Antes se leía siempre al PRIMERO del equipo (aunque estuviera debilitado y luchara otro) y al rival a una distancia
+// que dependía de cuántos Pokémon se descifraban bien: barra vacía y, a veces, otro Pokémon tuyo como rival.
+static const u32 BTL_FLAG = 0x081FB478, BTL_MINE = 0x081FB58C, BTL_FOE = 0x081FB5A8;
+static const u32 VT_BATTLE_CALL = 0x005DED9C;
+
+static bool ReadFighter(u32 table, u16 &sp, u8 &lv, u16 &hp, u16 &hpMax) {
+    if (!Ok(table, 4)) return false;
+    u32 f = R32(table);
+    if (!InHeap(f) || !Ok(f, 0x1C)) return false;
+    sp = R16(f + 0xC); hpMax = R16(f + 0xE); hp = R16(f + 0x10); lv = R8(f + 0x18);
+    return sp >= 1 && sp <= 721 && lv >= 1 && lv <= 100 && hpMax > 0 && hp <= hpMax;
+}
+
+// 1 salvaje, 2 entrenador. Sin EventBattleCall (combate por red u otro especial) cuenta como entrenador.
+static u8 BattleKind() {
+    if (!Process::CheckAddress(GS_STATIC & ~0xFFFu, MEMPERM_READ)) return 2;   // fuera del montón: Ok() no vale
+    u32 GS = *(volatile u32 *)GS_STATIC;
+    if (!InHeap(GS) || !Ok(GS + 0x18, 4)) return 2;
+    u32 evm = R32(GS + 0x18);
+    if (!InHeap(evm) || !Ok(evm, 4)) return 2;
+    u32 ev = R32(evm);
+    for (int i = 0; i < 8 && InHeap(ev) && Ok(ev, 0x24); i++) {
+        if (R32(ev) == VT_BATTLE_CALL) {
+            u32 setup = R32(ev + 0x20);
+            return (InHeap(setup) && Ok(setup, 4) && R8(setup) == 0) ? 1 : 2;
+        }
+        ev = R32(ev + 4);
+    }
+    return 2;
+}
+
+static void UpdateBattle() {
     Battle b;
     memset(&b, 0, sizeof(b));
-    u32 party = P + OFF_PARTY;
-    u32 base = party - 6000000u;
-    u32 wildMy = base + 812440u, wildOp = base + 815420u, trMy = base + 809556u, trOp = base + 812536u;
-    u32 curOp = party - 0xAF2F5Cu + 0x22EA60u;
-    u32 wildPP = party - 0xAF2F5Cu - 20u, trPP = wildPP + 6928u;
-    Pk op0;
-    u32 my = 0, op = 0, pp = 0;
-    if (ReadPk(wildOp, op0) && Ok(wildPP, 1) && R8(wildPP) < 65) { my = wildMy; op = wildOp; pp = wildPP; b.kind = 1; }
-    else if (ReadPk(trOp, op0) && Ok(trPP, 1) && R8(trPP) < 65) { my = trMy; op = trOp; pp = trPP; b.kind = 2; }
-    if (b.kind) {
-        int myCount = 0;
-        Pk mine0;
-        for (int i = 0; i < 6; i++) { Pk t; if (ReadPk(my + i * SLOT, t)) { if (!myCount) mine0 = t; myCount++; } }
-        // rival activo: el de la especie que el juego marca como actual
-        u16 cur = Ok(curOp, 2) ? R16(curOp) : 0;
-        int opIdx = 0;
-        Pk opk = op0;
-        for (int i = 0; i < 6; i++) { Pk t; if (ReadPk(op + i * SLOT, t) && t.species == cur) { opIdx = i; opk = t; break; } }
-        if (myCount) {
-            b.mySpecies = mine0.species; b.myLevel = mine0.level; b.myHp = mine0.hp; b.myHpMax = mine0.hpMax;
-            // nivel y PS en vivo (estructura de combate, índice 1 = mi primer Pokémon)
-            u32 s = pp + MONGAP * 0 ;
-            if (Ok(s - 266, 16)) {
-                u16 h1 = R16(s - 264), h2 = R16(s - 266); u8 lv = R8(s - 256);
-                u16 hp = h1 < h2 ? h1 : h2, hpMax = h1 < h2 ? h2 : h1;
-                if (hpMax && lv >= 1 && lv <= 100) { b.myHp = hp; b.myHpMax = hpMax; b.myLevel = lv; }
-            }
-        }
-        b.opSpecies = opk.species; b.opLevel = opk.level; b.opHp = opk.hp; b.opHpMax = opk.hpMax;
-        u32 s = pp + MONGAP * (u32)(myCount + opIdx);
-        if (Ok(s - 266, 16)) {
-            u16 h1 = R16(s - 264), h2 = R16(s - 266); u8 lv = R8(s - 256);
-            u16 hp = h1 < h2 ? h1 : h2, hpMax = h1 < h2 ? h2 : h1;
-            if (hpMax && lv >= 1 && lv <= 100) { b.opHp = hp; b.opHpMax = hpMax; b.opLevel = lv; }
-        }
-    }
+    if (Ok(BTL_FLAG, 4) && R32(BTL_FLAG) == 0x40001 &&
+        ReadFighter(BTL_MINE, b.mySpecies, b.myLevel, b.myHp, b.myHpMax) &&
+        ReadFighter(BTL_FOE, b.opSpecies, b.opLevel, b.opHp, b.opHpMax))
+        b.kind = BattleKind();
+    else
+        memset(&b, 0, sizeof(b));                       // presentación del combate: aún sin Pokémon en el campo
     Lock l(s_mutex);
     s_battle = b;
 }
@@ -232,7 +205,7 @@ void Update(u64 now, bool inBattle) {
     if (!P) return;
     if (now >= s_nextMine) { s_nextMine = now + 500; UpdateMine(P, now); }
     if (inBattle) {
-        if (now >= s_nextBattle) { s_nextBattle = now + 300; UpdateBattle(P); }
+        if (now >= s_nextBattle) { s_nextBattle = now + 100; UpdateBattle(); }   // barato: unos pocos punteros
     } else if (s_battle.kind) {
         Lock l(s_mutex);
         memset(&s_battle, 0, sizeof(s_battle));

@@ -394,8 +394,9 @@ static void NetworkThread(void *) {
         }
         SkinTex::Update(now);              // skin perfecta (color en la textura real del personaje)
         if (net.IsConnected()) {
-            static u64 nextStats = 0, nextBattle = 0;
+            static u64 nextStats = 0, nextBattle = 0, lastBattleSend = 0;
             static bool battleSent = false;
+            static Stats::Battle lastBt = {};
             Stats::Mine m0 = Stats::GetMine();
             // al arrancar/título: nada que mandar. v16.1: tampoco antes de saber el género (modelo correcto)
             if (now >= nextStats && App::GenderKnown() && (m0.okMisc || m0.okParty || m0.okDex)) {
@@ -412,8 +413,15 @@ static void NetworkThread(void *) {
                 net.Queue(p);
             }
             Stats::Battle bt = Stats::GetBattle();
-            if ((bt.kind && now >= nextBattle) || (!bt.kind && battleSent)) {
-                nextBattle = now + 400;
+            // v17.0 r3: en cuanto cambia algo (otro Pokémon, PS) y como mucho cada 150 ms; si nada cambia, cada 1 s
+            // para que el panel de tus amigos siga abierto. Antes iba fijo cada 400 ms (más 300 ms de lectura).
+            bool btChanged = bt.kind != lastBt.kind || bt.mySpecies != lastBt.mySpecies || bt.myLevel != lastBt.myLevel ||
+                             bt.myHp != lastBt.myHp || bt.myHpMax != lastBt.myHpMax || bt.opSpecies != lastBt.opSpecies ||
+                             bt.opLevel != lastBt.opLevel || bt.opHp != lastBt.opHp || bt.opHpMax != lastBt.opHpMax;
+            if ((bt.kind && now >= nextBattle && (btChanged || now - lastBattleSend >= 1000)) || (!bt.kind && battleSent)) {
+                nextBattle = now + 150;
+                lastBattleSend = now;
+                lastBt = bt;
                 battleSent = bt.kind != 0;
                 PlayerPacket p;
                 FillCommon(p, MMO_PKT_BATTLE);

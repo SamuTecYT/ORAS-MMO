@@ -1083,6 +1083,9 @@ static bool DrawBattleWatch(const Screen &s, const Game::LocalState &me, u64 now
     }
     if (best >= 0) {
         const MMO::RemoteView &v = s_views[best];
+        // v17.0 r3: sale otro Pokémon: su barra empieza en sus PS (no baja ni sube desde la del anterior) y se amplía
+        if (v.battle.mySp != B.mySp) { dispA = v.battle.myHpMax ? (float)v.battle.myHp / v.battle.myHpMax : 0.f; expandUntil = now + 4000; }
+        if (v.battle.opSp != B.opSp) { dispB = v.battle.opHpMax ? (float)v.battle.opHp / v.battle.opHpMax : 0.f; expandUntil = now + 4000; }
         if (v.id != watching || appear <= 0.f) {          // combate nuevo: entra ampliado
             watching = v.id; expandUntil = now + 5000; lastHpA = lastHpB = 0xFFFF;
             dispA = v.battle.myHpMax ? (float)v.battle.myHp / v.battle.myHpMax : 0.f;
