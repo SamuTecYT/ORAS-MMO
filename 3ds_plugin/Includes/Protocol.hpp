@@ -24,7 +24,7 @@
 #  endif
 #endif
 #ifndef MMO_DEFAULT_SERVER
-#define MMO_DEFAULT_SERVER   "127.0.0.1"
+#define MMO_DEFAULT_SERVER   "203.0.113.50"
 #endif
 #ifndef MMO_DEFAULT_PORT
 #define MMO_DEFAULT_PORT     9000
