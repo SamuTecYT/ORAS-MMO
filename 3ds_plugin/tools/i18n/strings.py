@@ -444,6 +444,9 @@ T = [
     ("Tu", "You", "Toi", "Tu", "Du", "あなた", "나"),
     ("vs entrenador", "vs trainer", "vs dresseur", "vs allenatore", "vs Trainer", None, None),
     ("vs salvaje", "vs wild", "vs sauvage", "vs selvatico", "vs wild", None, None),
+    # etiqueta junto al nombre de un amigo (Overlay.cpp): en combate / en un menú
+    (" [combate]", " [battle]", " [combat]", " [lotta]", " [Kampf]", None, None),
+    (" [menu]", " [menu]", " [menu]", " [menu]", " [Menue]", None, None),
     ("(susurro) %s: %s", "(whisper) %s: %s", "(chuchotis) %s: %s", "(sussurro) %s: %s", "(gefluestert) %s: %s", None, None),
     ("%s cancelo la invitacion", "%s canceled the invitation", "%s a annule l'invitation", "%s ha annullato l'invito", "%s hat die Einladung zurueckgezogen", None, None),
     ("%s salio de la sala", "%s left the room", "%s a quitte le salon", "%s ha lasciato la stanza", "%s hat den Raum verlassen", None, None),

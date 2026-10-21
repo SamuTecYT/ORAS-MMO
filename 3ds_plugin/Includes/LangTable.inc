@@ -266,6 +266,8 @@ static const Entry kTable[] = {
     { { "Tu", "You", "Toi", "Tu", "Du", "\343\201\202\343\201\252\343\201\237", "\353\202\230" } },
     { { "vs entrenador", "vs trainer", "vs dresseur", "vs allenatore", "vs Trainer", nullptr, nullptr } },
     { { "vs salvaje", "vs wild", "vs sauvage", "vs selvatico", "vs wild", nullptr, nullptr } },
+    { { " [combate]", " [battle]", " [combat]", " [lotta]", " [Kampf]", nullptr, nullptr } },
+    { { " [menu]", " [menu]", " [menu]", " [menu]", " [Menue]", nullptr, nullptr } },
     { { "(susurro) %s: %s", "(whisper) %s: %s", "(chuchotis) %s: %s", "(sussurro) %s: %s", "(gefluestert) %s: %s", nullptr, nullptr } },
     { { "%s cancelo la invitacion", "%s canceled the invitation", "%s a annule l'invitation", "%s ha annullato l'invito", "%s hat die Einladung zurueckgezogen", nullptr, nullptr } },
     { { "%s salio de la sala", "%s left the room", "%s a quitte le salon", "%s ha lasciato la stanza", "%s hat den Raum verlassen", nullptr, nullptr } },
